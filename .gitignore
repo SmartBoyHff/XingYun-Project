@@ -104,3 +104,11 @@ InitTestScene*.unity*
 
 # Auto-generated cache in Assets folder
 /[Aa]ssets/[Ss]ceneDependencyCache*
+# 第三方插件/SDK的临时文件和文档（不提交到仓库）
+_External/Plugins/*/Temp/
+_External/Plugins/*/Documentation/
+_External/Plugins/*/Examples/
+_External/SDKs/*/Documentation/
+_External/SDKs/*/Samples/
+_External/Assets/*/Examples/
+_External/Assets/*/Documentation/

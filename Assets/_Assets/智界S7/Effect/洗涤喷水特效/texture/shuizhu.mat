@@ -1,0 +1,142 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 6
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: shuizhu
+  m_Shader: {fileID: 4800000, guid: 453b1202ee630ea428176a095121ec22, type: 3}
+  m_ShaderKeywords: _USEDISSOLVE_ON _USEPARCUSTOM_ON _USERAODONG_ON
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _Dissolve:
+        m_Texture: {fileID: 2800000, guid: b37c0f4cf9446bc4eb872cffc9ea2f88, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DissolveMask:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DissolveTex:
+        m_Texture: {fileID: 2800000, guid: db0e938a2624e2c4188b5d5faa1a11dd, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _RampTex1:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _RaoDongTex:
+        m_Texture: {fileID: 2800000, guid: 0cb4e6a70558e31428a9981862f616da, type: 3}
+        m_Scale: {x: 9, y: 3}
+        m_Offset: {x: 0, y: 0}
+    - _RaoDongTexMask:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Tex01:
+        m_Texture: {fileID: 2800000, guid: c9c38f4ed6ad4644d8516e66579ada73, type: 3}
+        m_Scale: {x: 1, y: 0.5}
+        m_Offset: {x: 0, y: 0}
+    - _Tex01Mask:
+        m_Texture: {fileID: 2800000, guid: 97554adeba3945a4daa5765fe9f1329b, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Tex02Mask:
+        m_Texture: {fileID: 2800000, guid: 6ff16b062e86a5447857d1737250b16b, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _diffuse:
+        m_Texture: {fileID: 2800000, guid: c9c38f4ed6ad4644d8516e66579ada73, type: 3}
+        m_Scale: {x: 1, y: 0.5}
+        m_Offset: {x: 0, y: 0}
+    - _mask:
+        m_Texture: {fileID: 2800000, guid: 97554adeba3945a4daa5765fe9f1329b, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _mask2:
+        m_Texture: {fileID: 2800000, guid: 6ff16b062e86a5447857d1737250b16b, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _niuqutex:
+        m_Texture: {fileID: 2800000, guid: 0cb4e6a70558e31428a9981862f616da, type: 3}
+        m_Scale: {x: 9, y: 3}
+        m_Offset: {x: 0, y: 0}
+    - _node_8634:
+        m_Texture: {fileID: 2800000, guid: 6ff16b062e86a5447857d1737250b16b, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Floats:
+    - _Alpha: 1
+    - _AlphaCutoff: 0.5
+    - _CullMode: 0
+    - _Cutoff: 0.5
+    - _Dissolve: 1
+    - _DissolveMaskSpeedU2: 0
+    - _DissolveMaskSpeedV: 0
+    - _DissolveRotator2: 0
+    - _DissolveSpeedU1: 0
+    - _DissolveSpeedV1: 0
+    - _DissolveValue2: 0
+    - _DissolveWidth1: 0
+    - _Mask01SpeedU: 0
+    - _Mask01SpeedV: 0
+    - _Mask02SpeedU: 0
+    - _Mask02SpeedV: 0
+    - _RampTexSpeedU: 0
+    - _RampTexSpeedV: 0
+    - _RaoDong: 0.02
+    - _RaoDongMaskSpeedU1: 0
+    - _RaoDongMaskSpeedV: 0
+    - _RaoDongTexSpeedU: 0.003
+    - _RaoDongTexSpeedV: 0.003
+    - _Smooth: 0
+    - _SoftaDissolve1: 0
+    - _Tex01Rotator: 0
+    - _Tex01Rotator1: 0
+    - _Tex02Rotator: 0
+    - _Tex0Rotator3: 0
+    - _Tex1Power: 1
+    - _TexSpeedU: 0
+    - _TexSpeedV: 0.016
+    - _UseDissolve: 1
+    - _UseDissolveMask: 0
+    - _UseMask02: 0
+    - _UseParCustom: 1
+    - _UseParticleCustom1: 0
+    - _UseRadial: 0
+    - _UseRadialDissolve: 0
+    - _UseRadialMask1: 0
+    - _UseRadialMask2: 0
+    - _UseRaoDong: 1
+    - _UseTex01R: 0
+    - _UseTexRamp: 0
+    - _ZhouBoang: 1
+    - _diffuse_light: 5
+    - _disso_ang: 360
+    - _dissolve_ang: 1
+    - _dst: 1
+    - _mask_light: 5
+    - _niuquqd: 0.01
+    - _node_5579: 1
+    - _u_speed: 0.001
+    - _v_speed: 0.002
+    m_Colors:
+    - _Color: {r: 0.7889273, g: 0.8565936, b: 0.9411765, a: 1}
+    - _DissolveColor1: {r: 0, g: 0, b: 0, a: 0}
+    - _EmissionColor: {r: 1, g: 1, b: 1, a: 1}
+    - _Tex01Color: {r: 1, g: 1, b: 1, a: 1}
+    - _color: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    - _disslove_uv: {r: 0, g: 0, b: 0, a: 0}
+    - _niuqu_uvspeed: {r: 0.03, g: 0.03, b: 0, a: 0}
+    - _uvspeed: {r: 0, g: 0.016, b: 0, a: 0}
+  m_BuildTextureStacks: []

@@ -1,0 +1,665 @@
+fileFormatVersion: 2
+guid: c079990316f6785478767740a8f888ae
+ModelImporter:
+  serializedVersion: 23
+  fileIDToRecycleName:
+    100000: BaiBi_A
+    100002: BaiBi_B
+    100004: birchLimb1Main
+    100006: birchLimb1Main 1
+    100008: birchLimb1Main1
+    100010: birchLimb1Main1 1
+    100012: group1
+    100014: group11
+    100016: group12
+    100018: group2
+    100020: group3_pCube13
+    100022: JiTing:JiTing
+    100024: JiTing:JiTing_01_geo
+    100026: JiTing:JiTing_02_geo
+    100028: KongZhiHe
+    100030: pCube18
+    100032: pCube18 1
+    100034: pCube18 2
+    100036: pCube19
+    100038: pCube19 1
+    100040: pCube19 2
+    100042: pCube20
+    100044: pCube20 1
+    100046: pCube22
+    100048: pCube22 1
+    100050: pCube22 2
+    100052: pCube25
+    100054: pCube25 1
+    100056: pCube30
+    100058: pCube31
+    100060: pCube32
+    100062: pCube33
+    100064: pCylinder10
+    100066: pCylinder10 1
+    100068: pCylinder11
+    100070: pCylinder11 1
+    100072: pCylinder12
+    100074: pCylinder12 1
+    100076: pCylinder13
+    100078: pCylinder25
+    100080: pCylinder26
+    100082: pCylinder27
+    100084: pCylinder29
+    100086: pCylinder31
+    100088: //RootNode
+    100090: ShengZi_A
+    100092: ShengZi_B
+    100094: ZhuTi
+    100096: BaiBi_A01_geo
+    100098: BaiBi_A02_geo
+    100100: BaiBi_A03_geo
+    100102: BaiBi_B01_geo
+    100104: BaiBi_B02_geo
+    100106: BaiBi_B03_geo
+    100108: BaiBi_grp
+    100110: HouBaiBi_A_geo
+    100112: HouBaiBi_B
+    100114: HouBaiBi_B01_geo
+    100116: HouBaiBi_B02_geo
+    100118: HouBaiBi_B03_geo
+    100120: HouBaiBi_B_geo
+    100122: KongZhiHe01_geo
+    100124: KongZhiHe02_geo
+    100126: KongZhiHe03_geo
+    100128: KongZhiHe04_geo
+    100130: KongZhiHe05_geo
+    100132: KongZhiHe06_geo
+    100134: QianBaiBi_A
+    100136: QianBaiBi_A01_geo
+    100138: QianBaiBi_A02_geo
+    100140: QianBaiBi_A03_geo
+    100142: QianBaiBi_A_geo
+    100144: QianBaiBi_B
+    100146: QianBaiBi_B01_geo
+    100148: QianBaiBi_B02_geo
+    100150: QianBaiBi_B03_geo
+    100152: QianBaiBi_B_geo
+    100154: QiCheJueShenJi:group1
+    100156: QiCheJueShenJi:JiTing:JiTing
+    100158: QiCheJueShenJi:JiTing:JiTing_01_geo
+    100160: QiCheJueShenJi:JiTing:JiTing_02_geo
+    100162: QiCheJueShenJi:pCube18
+    100164: QiCheJueShenJi:pCube19
+    100166: QiCheJueShenJi:pCube22
+    100168: ShengZi_A01_geo
+    100170: ShengZi_A02_geo
+    100172: ShengZi_A03_geo
+    100174: ShengZi_B01_geo
+    100176: ShengZi_B02_geo
+    100178: ShengZi_B03_geo
+    100180: BaiBi_L
+    100182: BaiBi_L_A1_geo
+    100184: BaiBi_L_A2_geo
+    100186: BaiBi_L_A3_geo
+    100188: BaiBi_L_A4_geo
+    100190: BaiBi_L_B1_geo
+    100192: BaiBi_L_B2_geo
+    100194: BaiBi_L_B3_geo
+    100196: BaiBi_L_B4_geo
+    100198: BaiBi_R
+    100200: BaiBi_R_A1_geo
+    100202: BaiBi_R_A2_geo
+    100204: BaiBi_R_A3_geo
+    100206: BaiBi_R_A4_geo
+    100208: BaiBi_R_B1_geo
+    100210: BaiBi_R_B2_geo
+    100212: BaiBi_R_B3_geo
+    100214: BaiBi_R_B4_geo
+    100216: JiTing
+    100218: JiTing_01_geo
+    100220: JiTing_02_geo
+    100222: BaiBi_GuDing_L_A
+    100224: BaiBi_GuDing_L_A_geo
+    100226: BaiBi_GuDing_L_B
+    100228: BaiBi_GuDing_L_B_geo
+    100230: BaiBi_L_A1
+    100232: BaiBi_L_A2
+    100234: BaiBi_L_B1
+    100236: BaiBi_L_B2
+    100238: BaiBi_R_A1
+    100240: BaiBi_R_A2
+    100242: BaiBi_R_B1
+    100244: BaiBi_R_B2
+    100246: BaiBi_hull
+    100248: BaiBi_L_A1_rt
+    100250: BaiBi_L_B1_rt
+    100252: BaiBi_R_A1_rt
+    100254: BaiBi_R_B1_rt
+    100256: BaiBi_GuDing_R_A
+    100258: BaiBi_GuDing_R_A_geo
+    100260: BaiBi_GuDing_R_B
+    100262: BaiBi_GuDing_R_B_geo
+    400000: BaiBi_A
+    400002: BaiBi_B
+    400004: birchLimb1Main
+    400006: birchLimb1Main 1
+    400008: birchLimb1Main1
+    400010: birchLimb1Main1 1
+    400012: group1
+    400014: group11
+    400016: group12
+    400018: group2
+    400020: group3_pCube13
+    400022: JiTing:JiTing
+    400024: JiTing:JiTing_01_geo
+    400026: JiTing:JiTing_02_geo
+    400028: KongZhiHe
+    400030: pCube18
+    400032: pCube18 1
+    400034: pCube18 2
+    400036: pCube19
+    400038: pCube19 1
+    400040: pCube19 2
+    400042: pCube20
+    400044: pCube20 1
+    400046: pCube22
+    400048: pCube22 1
+    400050: pCube22 2
+    400052: pCube25
+    400054: pCube25 1
+    400056: pCube30
+    400058: pCube31
+    400060: pCube32
+    400062: pCube33
+    400064: pCylinder10
+    400066: pCylinder10 1
+    400068: pCylinder11
+    400070: pCylinder11 1
+    400072: pCylinder12
+    400074: pCylinder12 1
+    400076: pCylinder13
+    400078: pCylinder25
+    400080: pCylinder26
+    400082: pCylinder27
+    400084: pCylinder29
+    400086: pCylinder31
+    400088: //RootNode
+    400090: ShengZi_A
+    400092: ShengZi_B
+    400094: ZhuTi
+    400096: BaiBi_A01_geo
+    400098: BaiBi_A02_geo
+    400100: BaiBi_A03_geo
+    400102: BaiBi_B01_geo
+    400104: BaiBi_B02_geo
+    400106: BaiBi_B03_geo
+    400108: BaiBi_grp
+    400110: HouBaiBi_A_geo
+    400112: HouBaiBi_B
+    400114: HouBaiBi_B01_geo
+    400116: HouBaiBi_B02_geo
+    400118: HouBaiBi_B03_geo
+    400120: HouBaiBi_B_geo
+    400122: KongZhiHe01_geo
+    400124: KongZhiHe02_geo
+    400126: KongZhiHe03_geo
+    400128: KongZhiHe04_geo
+    400130: KongZhiHe05_geo
+    400132: KongZhiHe06_geo
+    400134: QianBaiBi_A
+    400136: QianBaiBi_A01_geo
+    400138: QianBaiBi_A02_geo
+    400140: QianBaiBi_A03_geo
+    400142: QianBaiBi_A_geo
+    400144: QianBaiBi_B
+    400146: QianBaiBi_B01_geo
+    400148: QianBaiBi_B02_geo
+    400150: QianBaiBi_B03_geo
+    400152: QianBaiBi_B_geo
+    400154: QiCheJueShenJi:group1
+    400156: QiCheJueShenJi:JiTing:JiTing
+    400158: QiCheJueShenJi:JiTing:JiTing_01_geo
+    400160: QiCheJueShenJi:JiTing:JiTing_02_geo
+    400162: QiCheJueShenJi:pCube18
+    400164: QiCheJueShenJi:pCube19
+    400166: QiCheJueShenJi:pCube22
+    400168: ShengZi_A01_geo
+    400170: ShengZi_A02_geo
+    400172: ShengZi_A03_geo
+    400174: ShengZi_B01_geo
+    400176: ShengZi_B02_geo
+    400178: ShengZi_B03_geo
+    400180: BaiBi_L
+    400182: BaiBi_L_A1_geo
+    400184: BaiBi_L_A2_geo
+    400186: BaiBi_L_A3_geo
+    400188: BaiBi_L_A4_geo
+    400190: BaiBi_L_B1_geo
+    400192: BaiBi_L_B2_geo
+    400194: BaiBi_L_B3_geo
+    400196: BaiBi_L_B4_geo
+    400198: BaiBi_R
+    400200: BaiBi_R_A1_geo
+    400202: BaiBi_R_A2_geo
+    400204: BaiBi_R_A3_geo
+    400206: BaiBi_R_A4_geo
+    400208: BaiBi_R_B1_geo
+    400210: BaiBi_R_B2_geo
+    400212: BaiBi_R_B3_geo
+    400214: BaiBi_R_B4_geo
+    400216: JiTing
+    400218: JiTing_01_geo
+    400220: JiTing_02_geo
+    400222: BaiBi_GuDing_L_A
+    400224: BaiBi_GuDing_L_A_geo
+    400226: BaiBi_GuDing_L_B
+    400228: BaiBi_GuDing_L_B_geo
+    400230: BaiBi_L_A1
+    400232: BaiBi_L_A2
+    400234: BaiBi_L_B1
+    400236: BaiBi_L_B2
+    400238: BaiBi_R_A1
+    400240: BaiBi_R_A2
+    400242: BaiBi_R_B1
+    400244: BaiBi_R_B2
+    400246: BaiBi_hull
+    400248: BaiBi_L_A1_rt
+    400250: BaiBi_L_B1_rt
+    400252: BaiBi_R_A1_rt
+    400254: BaiBi_R_B1_rt
+    400256: BaiBi_GuDing_R_A
+    400258: BaiBi_GuDing_R_A_geo
+    400260: BaiBi_GuDing_R_B
+    400262: BaiBi_GuDing_R_B_geo
+    2100000: lambert1
+    2100002: JuShengJi_TieTu01_mat
+    2100004: JuShengJi_TieTu02_mat
+    2100006: JuShengJi_TouMing_mat
+    2100008: Default_Material
+    2300000: birchLimb1Main
+    2300002: birchLimb1Main 1
+    2300004: birchLimb1Main1
+    2300006: birchLimb1Main1 1
+    2300008: group3_pCube13
+    2300010: JiTing:JiTing_01_geo
+    2300012: JiTing:JiTing_02_geo
+    2300014: pCube18
+    2300016: pCube18 1
+    2300018: pCube18 2
+    2300020: pCube19
+    2300022: pCube19 1
+    2300024: pCube19 2
+    2300026: pCube20
+    2300028: pCube20 1
+    2300030: pCube22
+    2300032: pCube22 1
+    2300034: pCube22 2
+    2300036: pCube25
+    2300038: pCube25 1
+    2300040: pCube30
+    2300042: pCube31
+    2300044: pCube32
+    2300046: pCube33
+    2300048: pCylinder10
+    2300050: pCylinder10 1
+    2300052: pCylinder11
+    2300054: pCylinder11 1
+    2300056: pCylinder12
+    2300058: pCylinder12 1
+    2300060: pCylinder13
+    2300062: pCylinder25
+    2300064: pCylinder26
+    2300066: pCylinder27
+    2300068: pCylinder29
+    2300070: pCylinder31
+    2300072: ZhuTi
+    2300074: BaiBi_A01_geo
+    2300076: BaiBi_A02_geo
+    2300078: BaiBi_A03_geo
+    2300080: BaiBi_B01_geo
+    2300082: BaiBi_B02_geo
+    2300084: BaiBi_B03_geo
+    2300086: HouBaiBi_A_geo
+    2300088: HouBaiBi_B01_geo
+    2300090: HouBaiBi_B02_geo
+    2300092: HouBaiBi_B03_geo
+    2300094: HouBaiBi_B_geo
+    2300096: KongZhiHe01_geo
+    2300098: KongZhiHe02_geo
+    2300100: KongZhiHe03_geo
+    2300102: KongZhiHe04_geo
+    2300104: KongZhiHe05_geo
+    2300106: KongZhiHe06_geo
+    2300108: QianBaiBi_A01_geo
+    2300110: QianBaiBi_A02_geo
+    2300112: QianBaiBi_A03_geo
+    2300114: QianBaiBi_A_geo
+    2300116: QianBaiBi_B01_geo
+    2300118: QianBaiBi_B02_geo
+    2300120: QianBaiBi_B03_geo
+    2300122: QianBaiBi_B_geo
+    2300124: QiCheJueShenJi:JiTing:JiTing_01_geo
+    2300126: QiCheJueShenJi:JiTing:JiTing_02_geo
+    2300128: QiCheJueShenJi:pCube18
+    2300130: QiCheJueShenJi:pCube19
+    2300132: QiCheJueShenJi:pCube22
+    2300134: ShengZi_A01_geo
+    2300136: ShengZi_A02_geo
+    2300138: ShengZi_A03_geo
+    2300140: ShengZi_B01_geo
+    2300142: ShengZi_B02_geo
+    2300144: ShengZi_B03_geo
+    2300146: BaiBi_L_A1_geo
+    2300148: BaiBi_L_A2_geo
+    2300150: BaiBi_L_A3_geo
+    2300152: BaiBi_L_A4_geo
+    2300154: BaiBi_L_B1_geo
+    2300156: BaiBi_L_B2_geo
+    2300158: BaiBi_L_B3_geo
+    2300160: BaiBi_L_B4_geo
+    2300162: BaiBi_R_A1_geo
+    2300164: BaiBi_R_A2_geo
+    2300166: BaiBi_R_A3_geo
+    2300168: BaiBi_R_A4_geo
+    2300170: BaiBi_R_B1_geo
+    2300172: BaiBi_R_B2_geo
+    2300174: BaiBi_R_B3_geo
+    2300176: BaiBi_R_B4_geo
+    2300178: JiTing_01_geo
+    2300180: JiTing_02_geo
+    2300182: BaiBi_GuDing_L_A_geo
+    2300184: BaiBi_GuDing_L_B_geo
+    2300186: BaiBi_GuDing_R_A_geo
+    2300188: BaiBi_GuDing_R_B_geo
+    3300000: birchLimb1Main
+    3300002: birchLimb1Main 1
+    3300004: birchLimb1Main1
+    3300006: birchLimb1Main1 1
+    3300008: group3_pCube13
+    3300010: JiTing:JiTing_01_geo
+    3300012: JiTing:JiTing_02_geo
+    3300014: pCube18
+    3300016: pCube18 1
+    3300018: pCube18 2
+    3300020: pCube19
+    3300022: pCube19 1
+    3300024: pCube19 2
+    3300026: pCube20
+    3300028: pCube20 1
+    3300030: pCube22
+    3300032: pCube22 1
+    3300034: pCube22 2
+    3300036: pCube25
+    3300038: pCube25 1
+    3300040: pCube30
+    3300042: pCube31
+    3300044: pCube32
+    3300046: pCube33
+    3300048: pCylinder10
+    3300050: pCylinder10 1
+    3300052: pCylinder11
+    3300054: pCylinder11 1
+    3300056: pCylinder12
+    3300058: pCylinder12 1
+    3300060: pCylinder13
+    3300062: pCylinder25
+    3300064: pCylinder26
+    3300066: pCylinder27
+    3300068: pCylinder29
+    3300070: pCylinder31
+    3300072: ZhuTi
+    3300074: BaiBi_A01_geo
+    3300076: BaiBi_A02_geo
+    3300078: BaiBi_A03_geo
+    3300080: BaiBi_B01_geo
+    3300082: BaiBi_B02_geo
+    3300084: BaiBi_B03_geo
+    3300086: HouBaiBi_A_geo
+    3300088: HouBaiBi_B01_geo
+    3300090: HouBaiBi_B02_geo
+    3300092: HouBaiBi_B03_geo
+    3300094: HouBaiBi_B_geo
+    3300096: KongZhiHe01_geo
+    3300098: KongZhiHe02_geo
+    3300100: KongZhiHe03_geo
+    3300102: KongZhiHe04_geo
+    3300104: KongZhiHe05_geo
+    3300106: KongZhiHe06_geo
+    3300108: QianBaiBi_A01_geo
+    3300110: QianBaiBi_A02_geo
+    3300112: QianBaiBi_A03_geo
+    3300114: QianBaiBi_A_geo
+    3300116: QianBaiBi_B01_geo
+    3300118: QianBaiBi_B02_geo
+    3300120: QianBaiBi_B03_geo
+    3300122: QianBaiBi_B_geo
+    3300124: QiCheJueShenJi:JiTing:JiTing_01_geo
+    3300126: QiCheJueShenJi:JiTing:JiTing_02_geo
+    3300128: QiCheJueShenJi:pCube18
+    3300130: QiCheJueShenJi:pCube19
+    3300132: QiCheJueShenJi:pCube22
+    3300134: ShengZi_A01_geo
+    3300136: ShengZi_A02_geo
+    3300138: ShengZi_A03_geo
+    3300140: ShengZi_B01_geo
+    3300142: ShengZi_B02_geo
+    3300144: ShengZi_B03_geo
+    3300146: BaiBi_L_A1_geo
+    3300148: BaiBi_L_A2_geo
+    3300150: BaiBi_L_A3_geo
+    3300152: BaiBi_L_A4_geo
+    3300154: BaiBi_L_B1_geo
+    3300156: BaiBi_L_B2_geo
+    3300158: BaiBi_L_B3_geo
+    3300160: BaiBi_L_B4_geo
+    3300162: BaiBi_R_A1_geo
+    3300164: BaiBi_R_A2_geo
+    3300166: BaiBi_R_A3_geo
+    3300168: BaiBi_R_A4_geo
+    3300170: BaiBi_R_B1_geo
+    3300172: BaiBi_R_B2_geo
+    3300174: BaiBi_R_B3_geo
+    3300176: BaiBi_R_B4_geo
+    3300178: JiTing_01_geo
+    3300180: JiTing_02_geo
+    3300182: BaiBi_GuDing_L_A_geo
+    3300184: BaiBi_GuDing_L_B_geo
+    3300186: BaiBi_GuDing_R_A_geo
+    3300188: BaiBi_GuDing_R_B_geo
+    4300000: ZhuTi
+    4300002: pCube30
+    4300004: pCylinder31
+    4300006: pCylinder26
+    4300008: pCylinder27
+    4300010: pCylinder29
+    4300012: pCylinder25
+    4300014: JiTing:JiTing_01_geo
+    4300016: JiTing:JiTing_02_geo
+    4300018: pCylinder12
+    4300020: birchLimb1Main1
+    4300022: birchLimb1Main
+    4300024: pCylinder12
+    4300026: birchLimb1Main1
+    4300028: birchLimb1Main
+    4300030: pCylinder13
+    4300032: pCylinder11
+    4300034: pCylinder10
+    4300036: pCube20
+    4300038: pCube19
+    4300040: pCube22
+    4300042: pCube18
+    4300044: pCube25
+    4300046: pCube33
+    4300048: pCube32
+    4300050: pCube31
+    4300052: pCube25
+    4300054: pCube18
+    4300056: pCube19
+    4300058: pCube22
+    4300060: pCube20
+    4300062: pCube18
+    4300064: pCube19
+    4300066: pCube22
+    4300068: pCylinder11
+    4300070: pCylinder10
+    4300072: group3_pCube13
+    4300074: KongZhiHe01_geo
+    4300076: KongZhiHe02_geo
+    4300078: KongZhiHe03_geo
+    4300080: KongZhiHe04_geo
+    4300082: KongZhiHe05_geo
+    4300084: KongZhiHe06_geo
+    4300086: QiCheJueShenJi:JiTing:JiTing_01_geo
+    4300088: QiCheJueShenJi:JiTing:JiTing_02_geo
+    4300090: ShengZi_A01_geo
+    4300092: ShengZi_A02_geo
+    4300094: ShengZi_A03_geo
+    4300096: ShengZi_B01_geo
+    4300098: ShengZi_B02_geo
+    4300100: ShengZi_B03_geo
+    4300102: QianBaiBi_B_geo
+    4300104: QianBaiBi_B01_geo
+    4300106: QianBaiBi_B02_geo
+    4300108: QianBaiBi_B03_geo
+    4300110: BaiBi_B01_geo
+    4300112: BaiBi_B02_geo
+    4300114: BaiBi_B03_geo
+    4300116: HouBaiBi_B_geo
+    4300118: HouBaiBi_B01_geo
+    4300120: HouBaiBi_B02_geo
+    4300122: HouBaiBi_B03_geo
+    4300124: QianBaiBi_A_geo
+    4300126: QianBaiBi_A01_geo
+    4300128: QianBaiBi_A02_geo
+    4300130: QianBaiBi_A03_geo
+    4300132: BaiBi_A01_geo
+    4300134: BaiBi_A02_geo
+    4300136: BaiBi_A03_geo
+    4300138: HouBaiBi_A_geo
+    4300140: QiCheJueShenJi:pCube18
+    4300142: QiCheJueShenJi:pCube19
+    4300144: QiCheJueShenJi:pCube22
+    4300146: JiTing_01_geo
+    4300148: JiTing_02_geo
+    4300150: BaiBi_L_A1_geo
+    4300152: BaiBi_L_A2_geo
+    4300154: BaiBi_L_A3_geo
+    4300156: BaiBi_L_A4_geo
+    4300158: BaiBi_L_B1_geo
+    4300160: BaiBi_L_B2_geo
+    4300162: BaiBi_L_B3_geo
+    4300164: BaiBi_L_B4_geo
+    4300166: BaiBi_R_A1_geo
+    4300168: BaiBi_R_A2_geo
+    4300170: BaiBi_R_A3_geo
+    4300172: BaiBi_R_A4_geo
+    4300174: BaiBi_R_B1_geo
+    4300176: BaiBi_R_B2_geo
+    4300178: BaiBi_R_B3_geo
+    4300180: BaiBi_R_B4_geo
+    4300182: BaiBi_GuDing_L_A_geo
+    4300184: BaiBi_GuDing_L_B_geo
+    4300186: BaiBi_GuDing_R_A_geo
+    4300188: BaiBi_GuDing_R_B_geo
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Default_Material
+    second: {fileID: 2100000, guid: 0373dade4fe1abf408d1abec98d8b95a, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: JuShengJi_TieTu01_mat
+    second: {fileID: 2100000, guid: 9accd9a3c4af1284eaa67db8ce6554e9, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: JuShengJi_TieTu02_mat
+    second: {fileID: 2100000, guid: 44945f843118ccb4ba6b09b38cc06aa6, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: JuShengJi_TouMing_mat
+    second: {fileID: 2100000, guid: 99d446d8fa3ba624792f0d0b932870b1, type: 2}
+  materials:
+    importMaterials: 1
+    materialName: 0
+    materialSearch: 1
+    materialLocation: 1
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    resampleCurves: 1
+    optimizeGameObjects: 0
+    motionNodeName: 
+    rigImportErrors: 
+    rigImportWarnings: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    importAnimatedCustomProperties: 0
+    importConstraints: 0
+    animationCompression: 1
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    extraUserProperties: []
+    clipAnimations: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    useSRGBMaterialColor: 1
+    importVisibility: 1
+    importBlendShapes: 1
+    importCameras: 1
+    importLights: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 1
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    keepQuads: 0
+    weldVertices: 1
+    preserveHierarchy: 0
+    indexFormat: 0
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+    previousCalculatedGlobalScale: 1
+    hasPreviousCalculatedGlobalScale: 0
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 3
+    normalCalculationMode: 4
+    legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 1
+    blendShapeNormalImportMode: 1
+    normalSmoothingSource: 0
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    serializedVersion: 2
+    human: []
+    skeleton: []
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
+    feetSpacing: 0
+    rootMotionBoneName: 
+    hasTranslationDoF: 0
+    hasExtraRoot: 0
+    skeletonHasParents: 1
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 0
+  humanoidOversampling: 1
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
