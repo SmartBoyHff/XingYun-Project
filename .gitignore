@@ -127,3 +127,8 @@ _External/Assets/*/Documentation/
 *.csproj.user
 *.unityproj
 *.booproj
+
+git add .gitattributes
+git add "Assets/_Assets/智界S7/Model/场景及设备/高压安全与防护/Fonts/MSYH SDF.asset"
+git commit -m "chore: 将大文件（.asset, .mp4, .jpg）迁移到 Git LFS"
+git push origin master:main
