@@ -112,3 +112,18 @@ _External/SDKs/*/Documentation/
 _External/SDKs/*/Samples/
 _External/Assets/*/Examples/
 _External/Assets/*/Documentation/
+# Unity自动生成的文件 - 不该提交
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+
+# Visual Studio / C# 项目文件（Unity会自动生成）
+*.csproj
+*.sln
+*.csproj.user
+*.unityproj
+*.booproj
