@@ -23,8 +23,8 @@ Assets/
 │   │   ├── UI/                           # 通用UI组件
 │   └── VRTeam/                       # VR场景
 │   │   ├── Interaction/              # VR交互
-│   │   ├── Maintenance/           # 模块4
-│   │   ├── Manufacturing/         # 模块6
-│   │   └── Sensor/                     # 模块5
+│   │   ├── Maintenance/           # 模块4 - 维护保养
+│   │   ├── Manufacturing/         # 模块6 - 整车制造
+│   │   └── Sensor/                     # 模块5 - 智能传感器
 └── SharedAssets/                      # 通用资产
 
