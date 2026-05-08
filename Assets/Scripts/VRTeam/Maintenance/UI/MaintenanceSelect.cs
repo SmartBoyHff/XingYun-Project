@@ -1,8 +1,28 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
+// ============================================================
+// 文件名：MaintenanceSelect
+// 模块：模块4 - 维护保养
+// 功能：维护保养旧版下拉选择判题示例，负责选项设置、提交和分数显示。
+// 创建日期：2026-05-5
+// 最后更新：2026-05-5
+// ============================================================
+
+/// <summary>
+/// MaintenanceSelect 类型说明
+/// 
+/// 【功能说明】
+/// 1. 属于模块4 - 维护保养中的 MaintenanceSelect 类型。
+/// 2. 负责旧版下拉选择判题、提交和分数显示。
+/// 3. 与维护保养流程中的步骤数据、交互逻辑或 UI 显示协同工作。
+/// 
+/// 【依赖组件】
+/// - Unity 组件体系。
+/// - VRHelmet.VRTeam.Maintenance 维护保养流程脚本。
+/// </summary>
 public class MaintenanceSelect : MonoBehaviour
 {
     public Dropdown dropdown;
