@@ -35,6 +35,7 @@ namespace Foundation.Console
         public string Text
         {
             get { return _text; }
+            
         }
 
         readonly string _formatted;
@@ -53,6 +54,7 @@ namespace Foundation.Console
         public Color Color
         {
             get { return _color; }
+           
         }
 
         public TerminalItem(TerminalType type, string text)

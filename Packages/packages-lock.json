@@ -1,5 +1,11 @@
 {
   "dependencies": {
+    "com.unity.2d.sprite": {
+      "version": "1.0.0",
+      "depth": 0,
+      "source": "builtin",
+      "dependencies": {}
+    },
     "com.unity.burst": {
       "version": "1.8.17",
       "depth": 1,
@@ -73,7 +79,7 @@
       "url": "https://packages.unity.cn"
     },
     "com.unity.pico.livepreview": {
-      "version": "file:E:/下载/Unity Live Preview Plugin-1.0.4-20241205",
+      "version": "file:E:/下载/Unity Live Preview Plugin-1.0.5-20250211",
       "depth": 0,
       "source": "local",
       "dependencies": {
@@ -227,7 +233,7 @@
       "url": "https://packages.unity.cn"
     },
     "com.unity.xr.picoxr": {
-      "version": "file:E:/下载/PICO Unity Integration SDK-3.3.2-20251111",
+      "version": "file:E:/下载/PICO Unity Integration SDK-3.0.5-20241105",
       "depth": 0,
       "source": "local",
       "dependencies": {

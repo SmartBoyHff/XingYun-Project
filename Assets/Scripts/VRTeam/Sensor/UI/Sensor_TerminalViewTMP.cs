@@ -212,26 +212,38 @@ public class Sensor_TerminalViewTMP : MonoBehaviour
     IEnumerator AddItemAsync(TerminalItem obj)
     {
 
-        //inst
+        // 实例化 UI 对象
         var instance = Instantiate(ItemPrototype.gameObject);
         var script = instance.GetComponent<Sensor_TerminalItemViewTMP>();
         script.Label.text = obj.Text;
         script.Label.color = obj.Color;
         script.Model = obj;
 
-        //parent
-        instance.transform.SetParent(ItemLayout,false);
-        instance.SetActive(true);
-        //wtf
+        instance.transform.SetParent(ItemLayout, false);
         instance.transform.localPosition = Vector3.zero;
         instance.transform.localScale = Vector3.one;
+        instance.SetActive(true);
 
         TextItems.Add(script);
 
-        yield return 1;
+        // 等待一帧，确保布局系统完成计算
+        yield return null;
 
-        if (ItemScrollBar)
+        // 强制刷新 Canvas 布局
+        Canvas.ForceUpdateCanvases();
+
+        // 滚动到底部
+        if (ItemScrollBar != null)
+        {
             ItemScrollBar.value = 0;
+        }
+        else
+        {
+            // 如果没有 Scrollbar 引用，尝试通过 ScrollRect 滚动
+            ScrollRect scrollRect = GetComponentInParent<ScrollRect>();
+            if (scrollRect != null)
+                scrollRect.verticalNormalizedPosition = 0f;
+        }
     }
 
 
@@ -259,6 +271,26 @@ public class Sensor_TerminalViewTMP : MonoBehaviour
     public void DoClear()
     {
         Terminal.Clear();
+    }
+
+    public void ScrollToBottom()//主动到底部
+    {
+        StartCoroutine(ScrollToBottomCoroutine());
+        
+    }
+
+    private IEnumerator ScrollToBottomCoroutine()
+    {
+        yield return null;
+        Canvas.ForceUpdateCanvases();
+        if (ItemScrollBar != null)
+            ItemScrollBar.value = 0;
+        else
+        {
+            ScrollRect scrollRect = GetComponentInParent<ScrollRect>();
+            if (scrollRect != null)
+                scrollRect.verticalNormalizedPosition = 0f;
+        }
     }
 }
 

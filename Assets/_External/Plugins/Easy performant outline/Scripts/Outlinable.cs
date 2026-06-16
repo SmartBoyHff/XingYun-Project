@@ -191,7 +191,7 @@ namespace EPOOutline
         {
             AddAllChildRenderersToRenderingList(RenderersAddingMode.SkinnedMeshRenderer | RenderersAddingMode.MeshRenderer | RenderersAddingMode.SpriteRenderer);
         }
-
+        
         private void OnValidate()
         {
             outlineLayer = Mathf.Clamp(outlineLayer, 0, 63);
@@ -258,6 +258,7 @@ namespace EPOOutline
         private void Awake()
         {
             ValidateTargets();
+            AddAllChildRenderersToRenderingList(RenderersAddingMode.SkinnedMeshRenderer | RenderersAddingMode.MeshRenderer | RenderersAddingMode.SpriteRenderer);
         }
 
         private void ValidateTargets()

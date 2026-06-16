@@ -4,75 +4,62 @@ using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
 public class D_GrabManager : MonoBehaviour
 {
-   public static D_GrabManager Instance { get; private set; }
+    public static D_GrabManager Instance { get; private set; }
 
-    [SerializeField] private XRRayInteractor rightRayInteractor; // 分配给右手的射线交互器
-    private XRGrabInteractable currentGrabbedObject;
-    private GrabbableItem currentGrabbableItem;
+    private string currentToolID = string.Empty;
+    private GrabbableItem currentItem;
+
+    public bool IsHandOccupied => !string.IsNullOrEmpty(currentToolID);
+    public string CurrentGrabbedItemID => currentToolID;
 
     private void Awake()
     {
-        Instance = this;
-    }
-
-    public bool IsHandOccupied() => currentGrabbedObject != null;
-
-    public string CurrentGrabbedItemID
-    {
-        get
+        if (Instance != null && Instance != this)
         {
-            if (currentGrabbableItem != null)
-                return currentGrabbableItem.itemID;
-            return string.Empty;
-        }
-    }
-
-    // 由工具栏调用：生成物体并立即抓取到右手
-    public void GrabObject(GameObject instance, string itemID, D_ToolbarSlot sourceSlot)
-    {
-        if (IsHandOccupied())
-        {
-            Destroy(instance);
+            Destroy(gameObject);
             return;
         }
-
-        // 确保物体有XRGrabInteractable和GrabbableItem组件
-        XRGrabInteractable grabInteractable = instance.GetComponent<XRGrabInteractable>();
-        if (grabInteractable == null)
-            grabInteractable = instance.AddComponent<XRGrabInteractable>();
-
-        GrabbableItem item = instance.GetComponent<GrabbableItem>();
-        if (item == null)
-            item = instance.AddComponent<GrabbableItem>();
-        item.itemID = itemID;
-        item.originSlot = sourceSlot;
-
-        // 使用交互器抓取
-        rightRayInteractor.interactionManager.SelectEnter(rightRayInteractor, grabInteractable);
-        currentGrabbedObject = grabInteractable;
-        currentGrabbableItem = item;
-
-        grabInteractable.selectExited.AddListener(OnSelectExited);
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
     }
 
-    private void OnSelectExited(SelectExitEventArgs args)
+    /// <summary>
+    /// 工具被抓住时由 GrabbableItem 调用
+    /// </summary>
+    public void ReportGrabbed(GrabbableItem item)
     {
-        // 物体被放下
-        if (args.interactableObject == currentGrabbedObject)
+        currentToolID = item.itemID;
+        currentItem = item;
+    }
+
+    /// <summary>
+    /// 工具被释放时由 GrabbableItem 调用
+    /// </summary>
+    public void ReportReleased(GrabbableItem item)
+    {
+        if (currentItem == item)
         {
-            currentGrabbedObject = null;
-            currentGrabbableItem = null;
+            currentToolID = string.Empty;
+            currentItem = null;
         }
     }
 
-    // 当物体被回收区销毁时调用
-    public void ForceClearCurrent()
+    /// <summary>
+    /// 回收区销毁工具时强制清除状态
+    /// </summary>
+    public void ClearCurrentTool()
     {
-        if (currentGrabbedObject != null)
+        if (currentItem != null)
         {
-            currentGrabbedObject.interactionManager.SelectExit(rightRayInteractor, currentGrabbedObject);
+            // 如果工具仍被某只手抓着，先释放
+            if (currentItem.TryGetComponent<UnityEngine.XR.Interaction.Toolkit.XRGrabInteractable>(out var interactable) && interactable.isSelected)
+            {
+                var manager = interactable.interactionManager;
+                if (manager != null)
+                    manager.SelectExit(interactable.selectingInteractor, interactable);
+            }
         }
-        currentGrabbedObject = null;
-        currentGrabbableItem = null;
+        currentToolID = string.Empty;
+        currentItem = null;
     }
 }

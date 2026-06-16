@@ -4,23 +4,19 @@ using UnityEngine;
 
 public class D_ToolRecoveryZone : MonoBehaviour
 {
-    [SerializeField] private D_ItemToolbarManager toolbarManager; // 工具栏管理器引用
+    [SerializeField] private D_ItemToolbarManager toolbarManager;
 
     private void OnTriggerEnter(Collider other)
     {
         GrabbableItem item = other.GetComponent<GrabbableItem>();
         if (item != null && !string.IsNullOrEmpty(item.itemID))
         {
-            // 通知工具栏管理器放回
             if (toolbarManager.TryReturnItem(item.itemID, item.originSlot))
             {
-                // 强制清除手部抓取状态
-                D_GrabManager.Instance.ForceClearCurrent();
+                // 如果正在被手抓着，先清除抓取状态
+                if (D_GrabManager.Instance.CurrentGrabbedItemID == item.itemID)
+                    D_GrabManager.Instance.ClearCurrentTool();
                 Destroy(item.gameObject);
-            }
-            else
-            {
-                Debug.Log("放回失败，所有槽位已满或不属于此工具栏");
             }
         }
     }
