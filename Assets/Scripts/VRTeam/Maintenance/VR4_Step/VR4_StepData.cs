@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.XR.Interaction.Toolkit;
 
 // ============================================================
@@ -35,6 +36,8 @@ namespace VRHelmet.VRTeam.Maintenance
         /// 场景中直接配置的步骤列表。工作单按钮的步骤区间会直接映射到该列表索引。
         /// </summary>
         public List<OperateStep> oStepList = new List<OperateStep>();
+
+        public static readonly VR4InteractionLayer DefaultInteractionMask = VR4InteractionLayer.Nothing;
 
         private readonly List<StepRuntimeState> runtimeStates = new List<StepRuntimeState>();
 
@@ -366,12 +369,12 @@ namespace VRHelmet.VRTeam.Maintenance
         /// <summary>
         /// 右手和射线使用的交互层。
         /// </summary>
-        public InteractionLayerMask RlayerMask;
+        public VR4InteractionLayer RlayerMask = VR4InteractionLayer.Nothing;
 
         /// <summary>
         /// 左手在双手模式下使用的交互层。
         /// </summary>
-        public InteractionLayerMask LlayerMask;
+        public VR4InteractionLayer LlayerMask = VR4InteractionLayer.Nothing;
 
         [Header("操作内容")]
         /// <summary>
@@ -473,6 +476,84 @@ namespace VRHelmet.VRTeam.Maintenance
         Shake,
         Collision,
         BaseObject,
+    }
+
+    [System.Serializable]
+    public struct VR4InteractionLayer
+    {
+        public const int MaxLayerCount = 30;
+        public const int EverythingMask = (1 << MaxLayerCount) - 1;
+
+        [SerializeField] private int mask;
+
+        public int Mask
+        {
+            get => mask & EverythingMask;
+            set => mask = value & EverythingMask;
+        }
+
+        public static VR4InteractionLayer Nothing => new VR4InteractionLayer(0);
+        public static VR4InteractionLayer None => Nothing;
+        public static VR4InteractionLayer Everything => new VR4InteractionLayer(EverythingMask);
+        public static VR4InteractionLayer All => Everything;
+        public static VR4InteractionLayer Default => new VR4InteractionLayer(1 << 0);
+        public static VR4InteractionLayer Interactable => new VR4InteractionLayer(1 << 1);
+        public static VR4InteractionLayer NonInteractable => new VR4InteractionLayer(1 << 2);
+
+        public VR4InteractionLayer(int maskValue)
+        {
+            mask = maskValue & EverythingMask;
+        }
+
+        public bool Contains(VR4InteractionLayer other)
+        {
+            return (Mask & other.Mask) != 0;
+        }
+
+        public override string ToString()
+        {
+            return Mask == EverythingMask ? "Everything" : Mask.ToString();
+        }
+
+        public static int operator &(VR4InteractionLayer left, VR4InteractionLayer right)
+        {
+            return left.Mask & right.Mask;
+        }
+
+        public static VR4InteractionLayer operator |(VR4InteractionLayer left, VR4InteractionLayer right)
+        {
+            return new VR4InteractionLayer(left.Mask | right.Mask);
+        }
+
+        public static bool operator ==(VR4InteractionLayer left, VR4InteractionLayer right)
+        {
+            return left.Mask == right.Mask;
+        }
+
+        public static bool operator !=(VR4InteractionLayer left, VR4InteractionLayer right)
+        {
+            return left.Mask != right.Mask;
+        }
+
+        public static bool operator ==(VR4InteractionLayer left, int right)
+        {
+            return left.Mask == right;
+        }
+
+        public static bool operator !=(VR4InteractionLayer left, int right)
+        {
+            return left.Mask != right;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is VR4InteractionLayer other && this == other;
+        }
+
+        public override int GetHashCode()
+        {
+            return Mask;
+        }
     }
 
     [System.Serializable]
@@ -613,6 +694,7 @@ namespace VRHelmet.VRTeam.Maintenance
         /// 物体要放置的目标 Socket。
         /// </summary>
         public XRSocketInteractor targetSocket;
+
         #endregion
 
         #region ==========Unity Method==========
@@ -688,12 +770,16 @@ namespace VRHelmet.VRTeam.Maintenance
         /// <summary>
         /// 负责开关完成事件的脚本。
         /// </summary>
-        public VR4_SwitchTrigger switchScript;
+        public VR4_SwitchObject switchScript;
 
         /// <summary>
         /// true 表示等待开关打开完成，false 表示等待开关闭合完成。
         /// </summary>
-        public bool isOpen;
+        [Tooltip("本步骤要求开关达到的目标状态。勾选表示等待开关打开完成，不勾选表示等待开关关闭完成。")]
+        public bool targetSwitchOpen;
+
+        [Tooltip("仅在目标状态为打开时生效。勾选后，开关打开时会先自动恢复为关闭状态，然后再完成当前步骤。")]
+        public bool closeAfterOpenBeforeComplete;
         #endregion
 
         #region ==========Unity Method==========

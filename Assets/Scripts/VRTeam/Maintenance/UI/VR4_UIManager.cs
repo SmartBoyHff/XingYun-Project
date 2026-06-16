@@ -1,5 +1,6 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 // ============================================================
@@ -45,6 +46,10 @@ namespace VRHelmet.VRTeam.Maintenance
         /// </summary>
         public VR4_TopicManager daotiManger;
 
+        [Header("Main Canvas Tracking")]
+        public GameObject mainCanvas;
+        public Transform headsetTransform;
+
         [Header("Panel")]
         /// <summary>
         /// 初始面板。场景开始时显示，工作单按钮点击后关闭，答题完成后重新打开。
@@ -66,6 +71,11 @@ namespace VRHelmet.VRTeam.Maintenance
         /// 开始填写工单按钮。初始不可交互，当前步骤完成并进入待答题状态后才可点击。
         /// </summary>
         public Button startFillWorkOrderButton;
+
+        /// <summary>
+        /// 重置当前场景按钮。
+        /// </summary>
+        public Button resetSceneButton;
 
         [Header("Text")]
         /// <summary>
@@ -102,6 +112,10 @@ namespace VRHelmet.VRTeam.Maintenance
         private int currentTopicTableIndex = 0;
         private int pendingTopicCount = 0;
         private bool hasPendingTopic = false;
+        private string lastTimeText = string.Empty;
+
+        [Header("Work Order State")]
+        public bool isWorkOrderDataLocked = false;
         #endregion
 
         #region ==========Unity Method==========
@@ -118,10 +132,23 @@ namespace VRHelmet.VRTeam.Maintenance
             ShowStartPanel();
         }
 
-        private void OnDestroy()
+        private void LateUpdate()
         {
+            FaceMainCanvasBackTowardHeadset();
+        }
+
+        protected override void OnDestroy()
+        {
+            StopCurrentAudioCoroutine();
             UnbindButtonEvents();
             UnsubscribeExperimentEvents();
+
+            if (TipText == tipText)
+            {
+                TipText = null;
+            }
+
+            base.OnDestroy();
         }
         #endregion
 
@@ -130,11 +157,39 @@ namespace VRHelmet.VRTeam.Maintenance
         {
             if (experimentManager == null) return;
 
+            UnsubscribeExperimentEvents();
             experimentManager.StepStarted += OnStepStarted;
             experimentManager.TopicStarted += OnTopicStarted;
             experimentManager.TimerChanged += OnTimerChanged;
             experimentManager.ExamEnded += EndExam;
             experimentManager.StepRangeCompleted += OnStepRangeCompleted;
+        }
+
+        private void FaceMainCanvasBackTowardHeadset()
+        {
+            if (mainCanvas == null)
+            {
+                return;
+            }
+
+            if (headsetTransform == null && Camera.main != null)
+            {
+                headsetTransform = Camera.main.transform;
+            }
+
+            if (headsetTransform == null)
+            {
+                return;
+            }
+
+            Transform canvasTransform = mainCanvas.transform;
+            Vector3 headsetDirection = headsetTransform.position - canvasTransform.position;
+            if (headsetDirection.sqrMagnitude <= 0.0001f)
+            {
+                return;
+            }
+
+            canvasTransform.rotation = Quaternion.LookRotation(-headsetDirection.normalized, Vector3.up);
         }
 
         private void UnsubscribeExperimentEvents()
@@ -152,7 +207,14 @@ namespace VRHelmet.VRTeam.Maintenance
         {
             if (startFillWorkOrderButton != null)
             {
+                startFillWorkOrderButton.onClick.RemoveListener(OnStartFillWorkOrderClicked);
                 startFillWorkOrderButton.onClick.AddListener(OnStartFillWorkOrderClicked);
+            }
+
+            if (resetSceneButton != null)
+            {
+                resetSceneButton.onClick.RemoveListener(ReloadCurrentScene);
+                resetSceneButton.onClick.AddListener(ReloadCurrentScene);
             }
         }
 
@@ -161,6 +223,25 @@ namespace VRHelmet.VRTeam.Maintenance
             if (startFillWorkOrderButton != null)
             {
                 startFillWorkOrderButton.onClick.RemoveListener(OnStartFillWorkOrderClicked);
+            }
+
+            if (resetSceneButton != null)
+            {
+                resetSceneButton.onClick.RemoveListener(ReloadCurrentScene);
+            }
+        }
+
+        private void StopCurrentAudioCoroutine()
+        {
+            if (currentAudioCoroutine != null)
+            {
+                StopCoroutine(currentAudioCoroutine);
+                currentAudioCoroutine = null;
+            }
+
+            if (eleAudioSource != null)
+            {
+                eleAudioSource.Stop();
             }
         }
 
@@ -226,14 +307,35 @@ namespace VRHelmet.VRTeam.Maintenance
 
         private void OnStepRangeCompleted(int startIndex, int endIndex)
         {
+            isWorkOrderDataLocked = false;
             ShowStartPanel();
         }
 
         private void OnTimerChanged(float remainSeconds)
         {
-            if (timeText != null)
+            int seconds = Mathf.CeilToInt(Mathf.Max(0f, remainSeconds));
+            string newTimeText = seconds + "s";
+
+            if (newTimeText == lastTimeText)
             {
-                timeText.text = Mathf.Max(0f, remainSeconds).ToString("F0") + "s";
+                return;
+            }
+
+            lastTimeText = newTimeText;
+            SetTextIfChanged(timeText, newTimeText);
+        }
+
+        private static void SetTextIfChanged(TextMeshProUGUI textComponent, string value)
+        {
+            if (textComponent == null)
+            {
+                return;
+            }
+
+            string newValue = value ?? string.Empty;
+            if (textComponent.text != newValue)
+            {
+                textComponent.text = newValue;
             }
         }
 
@@ -273,23 +375,10 @@ namespace VRHelmet.VRTeam.Maintenance
         #endregion
 
         #region ==========API==========
-        /// <summary>
-        /// 从工作单按钮指定的单个步骤开始执行实验流程，题表默认使用 0 号表。
-        /// </summary>
-        /// <param name="stepIndex">工作单对应的步骤索引。</param>
-        public void StartWorkOrder(int stepIndex)
+        public void ReloadCurrentScene()
         {
-            StartWorkOrder(stepIndex, stepIndex, 0);
-        }
-
-        /// <summary>
-        /// 从工作单按钮指定的单个步骤开始执行实验流程，并指定要使用的答题表。
-        /// </summary>
-        /// <param name="stepIndex">工作单对应的步骤索引。</param>
-        /// <param name="topicTableIndex">答题管理器 topicTables 中的题表索引。</param>
-        public void StartWorkOrder(int stepIndex, int topicTableIndex)
-        {
-            StartWorkOrder(stepIndex, stepIndex, topicTableIndex);
+            Scene activeScene = SceneManager.GetActiveScene();
+            SceneManager.LoadScene(activeScene.buildIndex);
         }
 
         /// <summary>
@@ -298,15 +387,27 @@ namespace VRHelmet.VRTeam.Maintenance
         /// <param name="startIndex">起始步骤索引，包含。</param>
         /// <param name="endIndex">结束步骤索引，包含。</param>
         /// <param name="topicTableIndex">答题管理器 topicTables 中的题表索引。</param>
-        public void StartWorkOrder(int startIndex, int endIndex, int topicTableIndex)
+        public bool StartWorkOrder(int startIndex, int endIndex, int topicTableIndex)
         {
+            if (isWorkOrderDataLocked)
+            {
+                return false;
+            }
+
             if (experimentManager == null)
             {
                 experimentManager = VR4_ExperimentManager.Instance;
             }
 
+            if (experimentManager == null)
+            {
+                return false;
+            }
+
+            isWorkOrderDataLocked = true;
             currentTopicTableIndex = topicTableIndex;
             InitiateProcess(startIndex, endIndex);
+            return true;
         }
 
         /// <summary>
@@ -392,10 +493,7 @@ namespace VRHelmet.VRTeam.Maintenance
         {
             string grade = CalculateScore(score);
 
-            if (displayText != null)
-            {
-                displayText.text = "总得分: " + score + "     等级: " + grade;
-            }
+            SetTextIfChanged(displayText, "总得分: " + score + "     等级: " + grade);
 
             ShowTip("");
         }
@@ -413,20 +511,10 @@ namespace VRHelmet.VRTeam.Maintenance
 
             if (currentStep.stepDescribe != null && displayText != null)
             {
-                displayText.text = "";
-                displayText.text = currentStep.stepText;
+                SetTextIfChanged(displayText, currentStep.stepText);
             }
 
-            if (currentAudioCoroutine != null)
-            {
-                StopCoroutine(currentAudioCoroutine);
-                currentAudioCoroutine = null;
-            }
-
-            if (eleAudioSource != null)
-            {
-                eleAudioSource.Stop();
-            }
+            StopCurrentAudioCoroutine();
 
             ShowTip("");
         }
@@ -439,7 +527,7 @@ namespace VRHelmet.VRTeam.Maintenance
         {
             if (!VR4_ExperimentManager.IsTest && TipText != null)
             {
-                TipText.text = tip;
+                SetTextIfChanged(TipText, tip);
             }
         }
 

@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.XR.Interaction.Toolkit;
 
 // ============================================================
 // 文件名：BaseObject
@@ -85,6 +86,18 @@ namespace VRHelmet.VRTeam.Maintenance
         /// </summary>
         [SerializeField] private bool isStepCompleted = false;
 
+        [Header("Interaction Permission")]
+        /// <summary>
+        /// 当前 BaseObject 所属的维护保养自定义交互层。
+        /// 流程步骤开始时会用 OperateStep 的 RlayerMask / LlayerMask 与该字段做按位匹配。
+        /// </summary>
+        [SerializeField] private VR4InteractionLayer interactionLayer = VR4InteractionLayer.Default;
+
+        /// <summary>
+        /// 交互层不匹配时是否输出拒绝日志，方便排查步骤层级配置问题。
+        /// </summary>
+        [SerializeField] private bool enablePermissionLogs = true;
+
         /// <summary>
         /// 当前物体是否已经完成本轮步骤。
         /// </summary>
@@ -94,12 +107,121 @@ namespace VRHelmet.VRTeam.Maintenance
         /// 对外暴露的完成事件引用，供接口统一访问。
         /// </summary>
         public UnityEvent OnStepCompleted => onStepCompleted;
+
+        private XRBaseInteractable baseInteractable;
+        private XRBaseInteractor activeLeftInteractor;
+        private XRBaseInteractor activeRightInteractor;
+        private XRBaseInteractor activeLeftRayInteractor;
+        private XRBaseInteractor activeRightRayInteractor;
+        private VR4InteractionLayer activeRightLayerMask = VR4InteractionLayer.Nothing;
+        private VR4InteractionLayer activeLeftLayerMask = VR4InteractionLayer.Nothing;
+        private bool activeTwoHandsMode;
+        private bool hasStepInteractionPermission;
+        private bool interactableEventsBound;
+        private float lastPermissionLogTime = -10f;
+
         #endregion
 
         #region ==========Unity Method==========
+        protected virtual void OnDestroy()
+        {
+            UnbindInteractableEvents();
+            onStepCompleted.RemoveAllListeners();
+        }
         #endregion
 
         #region ==========Logic==========
+        private void BindInteractableEvents()
+        {
+            if (interactableEventsBound)
+            {
+                return;
+            }
+
+            if (baseInteractable == null)
+            {
+                baseInteractable = GetComponent<XRBaseInteractable>();
+            }
+
+            if (baseInteractable == null)
+            {
+                return;
+            }
+
+            baseInteractable.hoverEntered.RemoveListener(OnPermissionHoverEntered);
+            baseInteractable.selectEntered.RemoveListener(OnPermissionSelectEntered);
+            baseInteractable.hoverEntered.AddListener(OnPermissionHoverEntered);
+            baseInteractable.selectEntered.AddListener(OnPermissionSelectEntered);
+            interactableEventsBound = true;
+        }
+
+        private void UnbindInteractableEvents()
+        {
+            if (baseInteractable == null)
+            {
+                return;
+            }
+
+            baseInteractable.hoverEntered.RemoveListener(OnPermissionHoverEntered);
+            baseInteractable.selectEntered.RemoveListener(OnPermissionSelectEntered);
+            interactableEventsBound = false;
+        }
+
+        private void OnPermissionHoverEntered(HoverEnterEventArgs args)
+        {
+            CanInteract(args.interactorObject as XRBaseInteractor, "Hover");
+        }
+
+        private void OnPermissionSelectEntered(SelectEnterEventArgs args)
+        {
+            if (CanInteract(args.interactorObject as XRBaseInteractor, "Select"))
+            {
+                return;
+            }
+
+            CancelSelection(args.interactorObject);
+        }
+
+        private VR4InteractionLayer GetAllowedMask(XRBaseInteractor interactor)
+        {
+            if (!activeTwoHandsMode)
+            {
+                return activeRightLayerMask;
+            }
+
+            if (interactor != null && (interactor == activeLeftInteractor || interactor == activeLeftRayInteractor))
+            {
+                return activeLeftLayerMask;
+            }
+
+            return activeRightLayerMask;
+        }
+
+        private void CancelSelection(IXRSelectInteractor interactor)
+        {
+            if (!(interactor is XRBaseInteractor baseInteractor) || baseInteractable == null)
+            {
+                return;
+            }
+
+            XRInteractionManager interactionManager = baseInteractor.interactionManager;
+            if (interactionManager != null)
+            {
+                interactionManager.SelectExit(interactor, baseInteractable);
+            }
+        }
+
+        private void LogPermissionDenied(XRBaseInteractor interactor, string actionName, VR4InteractionLayer allowedMask)
+        {
+            if (!enablePermissionLogs || Time.time - lastPermissionLogTime < 0.5f)
+            {
+                return;
+            }
+
+            lastPermissionLogTime = Time.time;
+            string interactorName = interactor != null ? interactor.name : "UnknownInteractor";
+            Debug.LogWarning($"[VR4Permission] Denied {actionName}. BaseObject={name}, ObjectLayer={interactionLayer}, Interactor={interactorName}, AllowedMask={allowedMask}");
+        }
         /// <summary>
         /// 完成步骤并兼容旧任务回调。
         /// 旧回调用于 ShakeObject.OnShakeCompleted、CollisionObject.OnCollisionCompleted 这类已被旧任务处理器监听的事件。
@@ -107,6 +229,13 @@ namespace VRHelmet.VRTeam.Maintenance
         /// <param name="legacyCompletedCallback">旧系统任务完成回调，可为空。</param>
         protected void CompleteStep(Action legacyCompletedCallback)
         {
+            if (!IsAllowedByCurrentStep())
+            {
+                VR4InteractionLayer allowedMask = activeTwoHandsMode ? activeRightLayerMask | activeLeftLayerMask : activeRightLayerMask;
+                LogPermissionDenied(null, "CompleteStep", allowedMask);
+                return;
+            }
+
             if (isStepCompleted)
             {
                 return;
@@ -120,6 +249,81 @@ namespace VRHelmet.VRTeam.Maintenance
 
         #region ==========API==========
         /// <summary>
+        /// 配置当前步骤允许的自定义交互层。
+        /// 由 VR4_ExperimentManager 在每一步开始时统一下发，BaseObject 会用它限制射线、左右手和自定义完成事件。
+        /// </summary>
+        public void ConfigureStepInteractionPermission(
+            VR4InteractionLayer rightLayerMask,
+            VR4InteractionLayer leftLayerMask,
+            bool twoHandsMode,
+            XRBaseInteractor leftInteractor,
+            XRBaseInteractor rightInteractor,
+            XRBaseInteractor leftRayInteractor,
+            XRBaseInteractor rayInteractor)
+        {
+            activeRightLayerMask = rightLayerMask;
+            activeLeftLayerMask = leftLayerMask;
+            activeTwoHandsMode = twoHandsMode;
+            activeLeftInteractor = leftInteractor;
+            activeRightInteractor = rightInteractor;
+            activeLeftRayInteractor = leftRayInteractor;
+            activeRightRayInteractor = rayInteractor;
+            hasStepInteractionPermission = true;
+            BindInteractableEvents();
+        }
+
+        /// <summary>
+        /// 清除步骤交互层限制，避免上一步权限残留到下一轮流程。
+        /// </summary>
+        public void ClearStepInteractionPermission()
+        {
+            hasStepInteractionPermission = false;
+            activeRightLayerMask = VR4InteractionLayer.Nothing;
+            activeLeftLayerMask = VR4InteractionLayer.Nothing;
+            activeTwoHandsMode = false;
+            activeLeftInteractor = null;
+            activeRightInteractor = null;
+            activeLeftRayInteractor = null;
+            activeRightRayInteractor = null;
+            UnbindInteractableEvents();
+        }
+
+        /// <summary>
+        /// 判断指定交互器是否允许操作当前 BaseObject。
+        /// SwitchObject、RotatableObject 会在 IsSelectableBy 阶段调用它，从源头阻止不匹配层级的射线选择。
+        /// </summary>
+        public bool CanInteract(XRBaseInteractor interactor, string actionName)
+        {
+            if (!hasStepInteractionPermission)
+            {
+                return true;
+            }
+
+            VR4InteractionLayer allowedMask = GetAllowedMask(interactor);
+            bool allowed = (interactionLayer & allowedMask) != 0;
+            if (!allowed)
+            {
+                LogPermissionDenied(interactor, actionName, allowedMask);
+            }
+
+            return allowed;
+        }
+
+        /// <summary>
+        /// 判断当前 BaseObject 是否在当前步骤允许的任意交互层内。
+        /// 主要供流程管理器在步骤开始时检查配置是否合理。
+        /// </summary>
+        public bool IsAllowedByCurrentStep()
+        {
+            if (!hasStepInteractionPermission)
+            {
+                return true;
+            }
+
+            return (interactionLayer & activeRightLayerMask) != 0 || (activeTwoHandsMode && (interactionLayer & activeLeftLayerMask) != 0);
+        }
+
+        /// <summary>
         /// 完成当前步骤。
         /// 自定义交互脚本通常只需要在条件满足时调用此方法即可。
         /// </summary>
@@ -132,7 +336,7 @@ namespace VRHelmet.VRTeam.Maintenance
         /// 重置步骤完成锁。
         /// 在重新开始任务、重新抓取或重置物体时调用。
         /// </summary>
-        public void ResetStepCompletion()
+        public virtual void ResetStepCompletion()
         {
             isStepCompleted = false;
         }
@@ -184,6 +388,7 @@ namespace VRHelmet.VRTeam.Maintenance
         {
             if (rotatableObject != null)
             {
+                rotatableObject.onValueChange.RemoveListener(OnRotatableValueChanged);
                 rotatableObject.onValueChange.AddListener(OnRotatableValueChanged);
             }
         }
@@ -254,6 +459,8 @@ namespace VRHelmet.VRTeam.Maintenance
                 return;
             }
 
+            switchObject.onLeverActivate.RemoveListener(OnSwitchOpened);
+            switchObject.onLeverDeactivate.RemoveListener(OnSwitchClosed);
             switchObject.onLeverActivate.AddListener(OnSwitchOpened);
             switchObject.onLeverDeactivate.AddListener(OnSwitchClosed);
         }

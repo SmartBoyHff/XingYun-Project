@@ -53,6 +53,12 @@ namespace VRHelmet.VRTeam.Maintenance
         /// </summary>
         public Button finishTableButton;
 
+        [Header("Table UI")]
+        /// <summary>
+        /// 当前题表标题文本。打开题目面板并切换 TopicTable 时，会显示当前 TopicTable.tableName。
+        /// </summary>
+        public TextMeshProUGUI tableTitle;
+
         [Header("Table Topic")]
         /// <summary>
         /// 所有可用题表。每个工作单按钮可以通过 topicTableIndex 指定打开这里的某一张表。
@@ -358,6 +364,8 @@ namespace VRHelmet.VRTeam.Maintenance
                 table.tableRoot.SetActive(true);
             }
 
+            RefreshTableTitle(table);
+
             currentTableSubmitted = false;
             currentTableTopicCount = CalculateTableTopicCount(table, requestedTopicCount);
             WarnIfTableTopicCountLimited(table, requestedTopicCount, currentTableTopicCount);
@@ -462,8 +470,20 @@ namespace VRHelmet.VRTeam.Maintenance
             Debug.LogWarning($"TopicTable '{tableName}' TopicDatas[{index}] has no ChoiceOptions.");
         }
 
+        private void RefreshTableTitle(TopicTable table)
+        {
+            if (tableTitle == null)
+            {
+                return;
+            }
+
+            tableTitle.text = table != null ? table.tableName : string.Empty;
+        }
+
         private void HideAllTopicTables()
         {
+            RefreshTableTitle(null);
+
             if (topicTables == null) return;
 
             foreach (TopicTable table in topicTables)
@@ -665,6 +685,16 @@ namespace VRHelmet.VRTeam.Maintenance
             currentTableSubmitted = true;
             RefreshTableButtons();
             CompleteTopicSession();
+
+            if (uiManager == null && VR4_UIManager.HasInstance)
+            {
+                uiManager = VR4_UIManager.Instance;
+            }
+
+            if (uiManager != null)
+            {
+                uiManager.ReloadCurrentScene();
+            }
         }
 
         /// <summary>

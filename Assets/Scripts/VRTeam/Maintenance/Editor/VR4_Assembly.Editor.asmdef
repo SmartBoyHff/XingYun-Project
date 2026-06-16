@@ -1,0 +1,19 @@
+{
+    "name": "VR4_Assembly.Editor",
+    "rootNamespace": "",
+    "references": [
+        "GUID:8e698ec3bcb46d9468a0608d086b0d89",
+        "GUID:fe685ec1767f73d42b749ea8045bfe43"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

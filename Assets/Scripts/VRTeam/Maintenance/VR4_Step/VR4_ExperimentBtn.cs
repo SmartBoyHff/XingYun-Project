@@ -27,6 +27,7 @@ namespace VRHelmet.VRTeam.Maintenance
     /// - Unity 组件体系。
     /// - VRHelmet.VRTeam.Maintenance 维护保养流程脚本。
     /// </summary>
+    [RequireComponent(typeof(Button))]
     public class VR4_ExperimentBtn : MonoBehaviour
     {
         #region ==========Field==========
@@ -47,20 +48,24 @@ namespace VRHelmet.VRTeam.Maintenance
         #endregion
 
         #region ==========Unity Method==========
-        private void Start()
+        private void Awake()
         {
             if (button == null)
             {
                 button = GetComponent<Button>();
             }
+        }
 
+        private void OnEnable()
+        {
             if (button != null)
             {
+                button.onClick.RemoveListener(OnBtnClicked);
                 button.onClick.AddListener(OnBtnClicked);
             }
         }
 
-        private void OnDestroy()
+        private void OnDisable()
         {
             if (button != null)
             {
@@ -80,7 +85,38 @@ namespace VRHelmet.VRTeam.Maintenance
 
             if (VR4_UIManager.HasInstance)
             {
-                VR4_UIManager.Instance.StartWorkOrder(startIndex, endIndex, topicTableIndex);
+                bool workOrderStarted = VR4_UIManager.Instance.StartWorkOrder(
+                    startIndex,
+                    endIndex,
+                    topicTableIndex);
+
+                if (workOrderStarted)
+                {
+                    DisableOtherExperimentButtons();
+                }
+            }
+        }
+
+        private void DisableOtherExperimentButtons()
+        {
+            VR4_ExperimentBtn[] experimentButtons = FindObjectsOfType<VR4_ExperimentBtn>(true);
+
+            foreach (VR4_ExperimentBtn experimentButton in experimentButtons)
+            {
+                if (experimentButton == null || experimentButton == this)
+                {
+                    continue;
+                }
+
+                if (experimentButton.button == null)
+                {
+                    experimentButton.button = experimentButton.GetComponent<Button>();
+                }
+
+                if (experimentButton.button != null)
+                {
+                    experimentButton.button.interactable = false;
+                }
             }
         }
 

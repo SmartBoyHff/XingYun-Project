@@ -68,16 +68,21 @@ namespace VRHelmet.VRTeam.Maintenance
         {
             if (_collisionTimer != null)
             {
+                _collisionTimer.OnTimerCompleted -= HandleTimerCompleted;
                 _collisionTimer.OnTimerCompleted += HandleTimerCompleted;
             }
         }
 
-        private void OnDestroy()
+        protected override void OnDestroy()
         {
+            base.OnDestroy();
+
             if (_collisionTimer != null)
             {
                 _collisionTimer.OnTimerCompleted -= HandleTimerCompleted;
             }
+
+            OnCollisionCompleted = null;
         }
         #endregion
 

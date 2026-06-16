@@ -65,6 +65,8 @@ namespace VRHelmet.VRTeam.Maintenance
         #region ==========Unity Method==========
         private void Awake()
         {
+            isQuitting = false;
+
             if (instance != null && instance != this)
             {
                 Destroy(gameObject);
@@ -81,7 +83,7 @@ namespace VRHelmet.VRTeam.Maintenance
             isQuitting = true;
         }
 
-        private void OnDestroy()
+        protected virtual void OnDestroy()
         {
             if (instance == this)
                 instance = null;

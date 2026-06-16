@@ -1,300 +1,309 @@
-using System.Collections.Generic;
-using Unity.XR.CoreUtils;
+using System;
 using UnityEngine;
-using UnityEngine.InputSystem;
-using UnityEngine.XR.Interaction.Toolkit;
+using UnityEngine.Events;
+using UnityEngine.UI;
 
 // ============================================================
-// 文件名：VR6_CameraOrbit
-// 模块：模块6 - 三体式飞行汽车展示
-// 功能：制摄像机从不同角度展示三体式飞行汽车控
-// 创建日期：2026-04-28
-// 最后更新：2026-04-29
+// File: VR6_CameraOrbit
+// Module: VR6 three-body flying car display
+// Purpose: Play-mode UI control
+// Created: 2026-04-28
+// Updated: 2026-05-11
 // ============================================================
 
 namespace VRHelmet.VRTeam.Manufacturing.VehicleTest.ThreeBodyCar
 {
+    /// <summary>
+    /// Coordinates VehicleTest mode buttons and play-mode UI canvas visibility.
+    /// </summary>
     public class VR6_CameraOrbit : MonoBehaviour
     {
-        /// <summary>
-        /// VR视角目标环绕控制器
-        /// 
-        /// 【功能说明】
-        /// 1. 维护一个Target目标物体，支持运行时动态切换
-        /// 2. Target改变后立即刷新头显视角，使其朝向目标
-        /// 3. 通过PICO手柄摇杆输入，控制视角绕目标旋转
-        /// 4. 约束俯仰角范围，避免视角翻转或过度抬头低头
-        /// 
-        /// 【依赖组件】
-        /// - XROrigin：用于移动/旋转XR原点以驱动头显视角
-        /// - Camera（XROrigin内部）：读取当前头显位置与朝向
-        /// - Unity XR InputDevice：读取左右手柄 primary2DAxis 摇杆输入
-        /// </summary>
-        [Header("XR")]
-        [SerializeField] private InputActionReference primary2DAxisAction;
-        [SerializeField] private InputActionReference triggerBtn;
-        [SerializeField] private InputActionReference grabBtn;
-        [SerializeField] private InputActionReference aBtn;
+        #region ==========Field==========
 
-        private InputAction cachedAxisAction;
-        private InputAction cachedTriggerAction;
-        private InputAction cachedGrabAction;
-        private InputAction cachedAAction;
+        [Header("UI")]
+        [SerializeField] private GameObject controlStepsCanvas;
+        [SerializeField] private GameObject playCanvas;
+        [SerializeField] private Button carModeButton;
+        [SerializeField] private Button flightModeButton;
+        [SerializeField] private Button explosionButton;
+        [SerializeField] private bool hidePlayCanvasOnStart = true;
 
-        [Header("Target")]
-        [SerializeField] private Transform target;
-        [SerializeField] private float deadZone = 0.15f;
+        [Header("Mode")]
+        [SerializeField] private VR6_MainBodyController mainBodyController;
 
-        [Header("Target Move")]
-        [SerializeField] private float targetMoveSpeed = 0.2f;
-        [SerializeField] private float targetTurnSpeed = 90f;
+        [Header("XR Rig Lock")]
+        [SerializeField] private bool lockXrRigOnPlayMode = true;
+        [SerializeField] private Transform xrRigRoot;
+        [SerializeField] private Rigidbody xrRigRigidbody;
+        [SerializeField] private CharacterController xrRigCharacterController;
+        [SerializeField] private Behaviour xrRigCharacterControllerDriver;
+        [SerializeField] private GameObject xrRigLocomotionSystemRoot;
+        [SerializeField] private Behaviour[] xrRigMovementComponents = Array.Empty<Behaviour>();
+        [SerializeField] private bool restoreXrRigPoseOnLock;
 
-        private Vector3 targetInitialPosition;
-        private Quaternion targetInitialRotation;
-        private Transform movingTarget;
+        [Header("Debug")]
+        [SerializeField] private bool enableDebugLogs = true;
 
-        [Header("VR6 Modules")]
-        [SerializeField] private Transform DiPan;
-        [SerializeField] private Transform FeiXingQi;
-        [SerializeField] private Transform JiCang;
+        private ButtonBinding[] buttonBindings = Array.Empty<ButtonBinding>();
+        private Vector3 xrRigInitialPosition;
+        private Quaternion xrRigInitialRotation;
 
-        [Header("Play Image")]
-        [SerializeField] private GameObject playImage;
+        #endregion
 
-        [Header("FeiXingQi Takeoff")]
-        [SerializeField] private float feiXingQiLiftSpeed = 0.1f;
-
-        [Header("Auto Rotate Parts")]
-        [SerializeField] private List<VR6_AxisRotateConstraint> feiXingQiBladeRotators = new List<VR6_AxisRotateConstraint>();
-        [SerializeField] private List<VR6_AxisRotateConstraint> carWheelRotators = new List<VR6_AxisRotateConstraint>();
-
-        private enum SelectedModule
-        {
-            None,
-            DiPan,
-            FeiXingQi,
-            JiCang
-        }
-
-        private SelectedModule selectedModule = SelectedModule.None;
-
-        private Transform hiddenModule;
-        private Transform cameraTransform;
-
-        private bool isTargetMoving;
+        #region ==========Unity Method==========
 
         private void Awake()
         {
-            cachedAxisAction = primary2DAxisAction != null ? primary2DAxisAction.action : null;
-            cachedTriggerAction = triggerBtn != null ? triggerBtn.action : null;
-            cachedGrabAction = grabBtn != null ? grabBtn.action : null;
-            cachedAAction = aBtn != null ? aBtn.action : null;
+            BuildButtonBindings();
+            InitializeCanvasState();
+            CacheXrRigPose();
 
-            if (target != null)
-            {
-                movingTarget = target;
-                targetInitialPosition = target.position;
-                targetInitialRotation = target.rotation;
-            }
-
-            StopAllAutoRotators();
+            Log($"Awake. mainBodyController assigned: {mainBodyController != null}, carButton: {carModeButton != null}, flightButton: {flightModeButton != null}, explosionButton: {explosionButton != null}");
         }
 
         private void OnEnable()
         {
-            cachedAxisAction?.Enable();
-            cachedTriggerAction?.Enable();
-            cachedGrabAction?.Enable();
-            cachedAAction?.Enable();
+            SetButtonBindingsRegistered(true);
+            Log("Button events registered.");
         }
 
         private void OnDisable()
         {
-            cachedAxisAction?.Disable();
-            cachedTriggerAction?.Disable();
-            cachedGrabAction?.Disable();
-            cachedAAction?.Disable();
+            SetButtonBindingsRegistered(false);
+            Log("Button events unregistered.");
         }
 
-        private void Update()
-        {
-            TryStopAndResetByGrab();
-            UpdateTargetMove();
-        }
+        #endregion
 
-        private void TryStopAndResetByGrab()
+        #region ==========Logic==========
+
+        private readonly struct ButtonBinding
         {
-            if (cachedGrabAction == null)
+            private readonly Button button;
+            private readonly UnityAction action;
+
+            /// <summary>
+            /// Creates a button binding from a Unity UI button and click action.
+            /// </summary>
+            public ButtonBinding(Button button, UnityAction action)
             {
-                return;
+                this.button = button;
+                this.action = action;
             }
 
-            if (!cachedGrabAction.WasPressedThisFrame())
+            /// <summary>
+            /// Registers the stored action to the stored button when both are valid.
+            /// </summary>
+            public void Register()
             {
-                return;
-            }
-
-            ResetMovingTargetPosition();
-        }
-
-
-        public void ActivateCarMode()
-        {
-            selectedModule = SelectedModule.DiPan;
-            HideModule(FeiXingQi);
-            StartTargetMove();
-
-            SetPlayImageActive(true);
-            SetRotatorsAutoRotate(carWheelRotators, true);
-            SetRotatorsAutoRotate(feiXingQiBladeRotators, false);
-        }
-
-        public void ActivateFlightMode()
-        {
-            selectedModule = SelectedModule.FeiXingQi;
-            HideModule(DiPan);
-            StartTargetMove();
-
-            SetPlayImageActive(true);
-            SetRotatorsAutoRotate(feiXingQiBladeRotators, true);
-            SetRotatorsAutoRotate(carWheelRotators, false);
-        }
-
-        public void ActivateCabinMode()
-        {
-            selectedModule = SelectedModule.JiCang;
-            RestoreHiddenModule();
-            StartTargetMove();
-
-            SetPlayImageActive(false);
-            StopAllAutoRotators();
-        }
-
-        private void TryResetByGrab()
-        {
-            if (cachedGrabAction == null)
-            {
-                return;
-            }
-
-            if (!cachedGrabAction.WasPressedThisFrame())
-            {
-                return;
-            }
-
-            ResetMovingTargetPosition();
-        }
-
-        private void StartTargetMove()
-        {
-            if (target == null)
-            {
-                return;
-            }
-
-            movingTarget = target;
-            isTargetMoving = true;
-        }
-
-        private void HideModule(Transform module)
-        {
-            RestoreHiddenModule();
-
-            if (module == null)
-            {
-                return;
-            }
-
-            hiddenModule = module;
-            hiddenModule.gameObject.SetActive(false);
-        }
-
-        private void RestoreHiddenModule()
-        {
-            if (hiddenModule != null)
-            {
-                hiddenModule.gameObject.SetActive(true);
-                hiddenModule = null;
-            }
-        }
-
-        private void UpdateTargetMove()
-        {
-            if (!isTargetMoving || movingTarget == null)
-            {
-                return;
-            }
-
-            Vector3 targetPositionBefore = movingTarget.position;
-
-            Vector2 axis = cachedAxisAction != null ? cachedAxisAction.ReadValue<Vector2>() : Vector2.zero;
-
-            float moveInput = Mathf.Abs(axis.y) > deadZone ? axis.y : 0f;
-            float turnInput = Mathf.Abs(axis.x) > deadZone ? axis.x : 0f;
-
-            if (Mathf.Abs(turnInput) > 0f)
-            {
-                movingTarget.Rotate(0f, turnInput * targetTurnSpeed * Time.deltaTime, 0f, Space.World);
-            }
-
-            if (Mathf.Abs(moveInput) > 0f)
-            {
-                Vector3 deltaMove = movingTarget.forward * moveInput * targetMoveSpeed * Time.deltaTime;
-                movingTarget.position += deltaMove;
-            }
-
-            if (selectedModule == SelectedModule.FeiXingQi && cachedTriggerAction != null && cachedTriggerAction.IsPressed())
-            {
-                movingTarget.position += Vector3.up * feiXingQiLiftSpeed * Time.deltaTime;
-            }
-        }
-
-        private void ResetMovingTargetPosition()
-        {
-            if (target != null)
-            {
-                target.position = targetInitialPosition;
-                target.rotation = targetInitialRotation;
-            }
-
-            movingTarget = target;
-            isTargetMoving = false;
-
-            RestoreHiddenModule();
-            StopAllAutoRotators();
-            SetPlayImageActive(false);
-
-            selectedModule = SelectedModule.None;
-        }
-
-        private void SetPlayImageActive(bool active)
-        {
-            if (playImage != null)
-            {
-                playImage.SetActive(active);
-            }
-        }
-
-        private void StopAllAutoRotators()
-        {
-            SetRotatorsAutoRotate(feiXingQiBladeRotators, false);
-            SetRotatorsAutoRotate(carWheelRotators, false);
-        }
-
-        private void SetRotatorsAutoRotate(List<VR6_AxisRotateConstraint> rotators, bool enable)
-        {
-            if (rotators == null)
-            {
-                return;
-            }
-
-            for (int i = 0; i < rotators.Count; i++)
-            {
-                if (rotators[i] != null)
+                if (button != null)
                 {
-                    rotators[i].SetAutoRotate(enable);
+                    button.onClick.AddListener(action);
+                }
+            }
+
+            /// <summary>
+            /// Unregisters the stored action from the stored button when both are valid.
+            /// </summary>
+            public void Unregister()
+            {
+                if (button != null)
+                {
+                    button.onClick.RemoveListener(action);
                 }
             }
         }
+
+        private void BuildButtonBindings()
+        {
+            buttonBindings = new[]
+            {
+                new ButtonBinding(carModeButton, OnCarModeButtonClicked),
+                new ButtonBinding(flightModeButton, OnFlightModeButtonClicked),
+                new ButtonBinding(explosionButton, OnExplosionButtonClicked)
+            };
+        }
+
+        private void InitializeCanvasState()
+        {
+            if (playCanvas != null && hidePlayCanvasOnStart)
+            {
+                playCanvas.SetActive(false);
+                Log("Play canvas hidden on start.");
+            }
+        }
+
+        private void CacheXrRigPose()
+        {
+            if (xrRigRoot == null)
+            {
+                return;
+            }
+
+            xrRigInitialPosition = xrRigRoot.position;
+            xrRigInitialRotation = xrRigRoot.rotation;
+        }
+
+        private void SetButtonBindingsRegistered(bool registered)
+        {
+            for (int i = 0; i < buttonBindings.Length; i++)
+            {
+                if (registered)
+                {
+                    buttonBindings[i].Register();
+                }
+                else
+                {
+                    buttonBindings[i].Unregister();
+                }
+            }
+        }
+
+        private void OnCarModeButtonClicked()
+        {
+            Log("Car mode button clicked.");
+            SetPlayMode(true);
+
+            if (mainBodyController != null)
+            {
+                mainBodyController.ActivateCarMode();
+            }
+            else
+            {
+                Debug.LogWarning("[VR6_CameraOrbit] MainBodyController is not assigned. Car mode cannot start.", this);
+            }
+        }
+
+        private void OnFlightModeButtonClicked()
+        {
+            Log("Flight mode button clicked.");
+            SetPlayMode(true);
+
+            if (mainBodyController != null)
+            {
+                mainBodyController.ActivateFlightMode();
+            }
+            else
+            {
+                Debug.LogWarning("[VR6_CameraOrbit] MainBodyController is not assigned. Flight mode cannot start.", this);
+            }
+        }
+
+        private void OnExplosionButtonClicked()
+        {
+            Log("Explosion button clicked.");
+
+            if (mainBodyController != null)
+            {
+                mainBodyController.ToggleExplosion();
+            }
+            else
+            {
+                Debug.LogWarning("[VR6_CameraOrbit] MainBodyController is not assigned. Explosion cannot toggle.", this);
+            }
+        }
+
+        private static void SetCanvasActive(GameObject canvas, bool active)
+        {
+            if (canvas != null)
+            {
+                canvas.SetActive(active);
+            }
+        }
+
+        private void SetXrRigMovementLocked(bool locked)
+        {
+            if (!locked)
+            {
+                SetXrRigLocomotionSystemActive(true);
+            }
+
+            for (int i = 0; i < xrRigMovementComponents.Length; i++)
+            {
+                Behaviour movementComponent = xrRigMovementComponents[i];
+
+                if (movementComponent == null)
+                {
+                    continue;
+                }
+
+                movementComponent.enabled = !locked;
+                Log($"XR Rig movement component {(locked ? "disabled" : "enabled")}: {movementComponent.GetType().Name}");
+            }
+
+            if (xrRigRigidbody != null)
+            {
+                xrRigRigidbody.velocity = Vector3.zero;
+                xrRigRigidbody.angularVelocity = Vector3.zero;
+                xrRigRigidbody.isKinematic = locked;
+                Log($"XR Rig Rigidbody locked: {locked}");
+            }
+
+            if (xrRigCharacterController != null)
+            {
+                xrRigCharacterController.enabled = !locked;
+                Log($"XR Rig CharacterController {(locked ? "disabled" : "enabled")}.");
+            }
+
+            if (xrRigCharacterControllerDriver != null)
+            {
+                xrRigCharacterControllerDriver.enabled = !locked;
+                Log($"XR Rig CharacterControllerDriver {(locked ? "disabled" : "enabled")}: {xrRigCharacterControllerDriver.GetType().Name}");
+            }
+
+            if (locked)
+            {
+                SetXrRigLocomotionSystemActive(false);
+            }
+
+            if (locked && restoreXrRigPoseOnLock && xrRigRoot != null)
+            {
+                xrRigRoot.position = xrRigInitialPosition;
+                xrRigRoot.rotation = xrRigInitialRotation;
+                Log("XR Rig pose restored while locking movement.");
+            }
+        }
+
+        private void SetXrRigLocomotionSystemActive(bool active)
+        {
+            if (xrRigLocomotionSystemRoot == null)
+            {
+                return;
+            }
+
+            if (xrRigRoot != null && xrRigLocomotionSystemRoot == xrRigRoot.gameObject)
+            {
+                Debug.LogWarning("[VR6_CameraOrbit] XR Rig Locomotion System Root should not be the XR Rig root itself. Assign the child Locomotion System object instead.", this);
+                return;
+            }
+
+            xrRigLocomotionSystemRoot.SetActive(active);
+            Log($"XR Rig Locomotion System root active: {active}");
+        }
+
+        private void Log(string message)
+        {
+            if (enableDebugLogs)
+            {
+                Debug.Log($"[VR6_CameraOrbit] {message}", this);
+            }
+        }
+
+        #endregion
+
+        #region ==========API==========
+
+        /// <summary>
+        /// Switches VehicleTest UI between setup/control-step mode and play mode.
+        /// </summary>
+        public void SetPlayMode(bool isPlayMode)
+        {
+            SetCanvasActive(controlStepsCanvas, !isPlayMode);
+            SetCanvasActive(playCanvas, isPlayMode);
+            SetXrRigMovementLocked(isPlayMode && lockXrRigOnPlayMode);
+            Log($"SetPlayMode: {isPlayMode}. controlStepsCanvas: {!isPlayMode}, playCanvas: {isPlayMode}, XR rig locked: {isPlayMode && lockXrRigOnPlayMode}");
+        }
+
+        #endregion
     }
 }

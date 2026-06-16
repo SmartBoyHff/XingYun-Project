@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.XR.Interaction.Toolkit;
@@ -45,6 +46,14 @@ namespace VRHelmet.VRTeam.Maintenance
         bool m_LockToValue;
 
         [SerializeField]
+        [Tooltip("If enabled, selecting this switch with an XR Ray Interactor will immediately set the switch to the on value")]
+        bool m_OpenOnRaySelect;
+
+        [SerializeField]
+        [Tooltip("Local axis used to rotate and evaluate the lever")]
+        SwitchLocalAxis m_LocalAxis = SwitchLocalAxis.X;
+
+        [SerializeField]
         [Tooltip("Angle of the lever in the 'on' position")]
         [Range(-90.0f, 90.0f)]
         float m_MaxAngle = 90.0f;
@@ -62,7 +71,18 @@ namespace VRHelmet.VRTeam.Maintenance
         [Tooltip("Events to trigger when the lever deactivates")]
         UnityEvent m_OnLeverDeactivate = new UnityEvent();
 
+        [Header("Switch Trigger")]
+        public Action OnSwitchOpenCompleted;
+        public Action OnSwitchCloseCompleted;
+        public Action OnSwitchTargetCompleted;
+        public bool targetSwitchOpen;
+        public bool closeAfterOpenBeforeComplete;
+
         IXRSelectInteractor m_Interactor;
+        VR4_BaseObject permissionSource;
+        VR4_FunctionalComponents functionalPermissionSource;
+        bool hasReachedTargetBeforeReturn;
+        bool isRayInstantSelect;
 
         /// <summary>
         /// 可视化拉杆手柄。
@@ -85,7 +105,23 @@ namespace VRHelmet.VRTeam.Maintenance
         /// <summary>
         /// 释放后是否吸附到当前开关值对应角度。
         /// </summary>
-        public bool lockToValue { get; set; }
+        public bool lockToValue
+        {
+            get => m_LockToValue;
+            set => m_LockToValue = value;
+        }
+
+        public bool openOnRaySelect
+        {
+            get => m_OpenOnRaySelect;
+            set => m_OpenOnRaySelect = value;
+        }
+
+        public SwitchLocalAxis localAxis
+        {
+            get => m_LocalAxis;
+            set => m_LocalAxis = value;
+        }
 
         /// <summary>
         /// 开启状态对应角度。
@@ -125,14 +161,13 @@ namespace VRHelmet.VRTeam.Maintenance
         protected override void OnEnable()
         {
             base.OnEnable();
+            selectEntered.RemoveListener(StartGrab);
             selectEntered.AddListener(StartGrab);
-            selectExited.AddListener(EndGrab);
         }
 
         protected override void OnDisable()
         {
             selectEntered.RemoveListener(StartGrab);
-            selectExited.RemoveListener(EndGrab);
             base.OnDisable();
         }
 
@@ -145,8 +180,8 @@ namespace VRHelmet.VRTeam.Maintenance
 
             const float k_AngleLength = 0.25f;
 
-            var angleMaxPoint = angleStartPoint + transform.TransformDirection(Quaternion.Euler(m_MaxAngle, 0.0f, 0.0f) * Vector3.up) * k_AngleLength;
-            var angleMinPoint = angleStartPoint + transform.TransformDirection(Quaternion.Euler(m_MinAngle, 0.0f, 0.0f) * Vector3.up) * k_AngleLength;
+            var angleMaxPoint = angleStartPoint + transform.TransformDirection(GetAxisRotation(m_MaxAngle) * GetGizmoDirection()) * k_AngleLength;
+            var angleMinPoint = angleStartPoint + transform.TransformDirection(GetAxisRotation(m_MinAngle) * GetGizmoDirection()) * k_AngleLength;
 
             Gizmos.color = Color.green;
             Gizmos.DrawLine(angleStartPoint, angleMaxPoint);
@@ -162,30 +197,84 @@ namespace VRHelmet.VRTeam.Maintenance
         #endregion
 
         #region ==========Logic==========
-        void StartGrab(SelectEnterEventArgs args)
+        VR4_BaseObject GetPermissionSource()
         {
-            m_Interactor = args.interactorObject;
+            if (permissionSource == null)
+            {
+                permissionSource = GetComponent<VR4_BaseObject>();
+            }
+
+            return permissionSource;
         }
 
-        void EndGrab(SelectExitEventArgs args)
+        bool CanInteractByStepLayer(IXRInteractor interactor, string actionName)
         {
-            SetValue(m_Value, true);
-            m_Interactor = null;
+            VR4_BaseObject source = GetPermissionSource();
+            if (source != null)
+            {
+                return source.CanInteract(interactor as XRBaseInteractor, actionName);
+            }
+
+            if (functionalPermissionSource == null)
+            {
+                functionalPermissionSource = GetComponent<VR4_FunctionalComponents>();
+            }
+
+            return functionalPermissionSource == null || functionalPermissionSource.IsInteractorAllowed(interactor, actionName);
+        }
+
+        void StartGrab(SelectEnterEventArgs args)
+        {
+            isRayInstantSelect = m_OpenOnRaySelect && args.interactorObject is XRRayInteractor;
+
+            if (isRayInstantSelect)
+            {
+                m_Interactor = null;
+                SetValue(!m_Value, true);
+                return;
+            }
+
+            m_Interactor = args.interactorObject;
         }
 
         Vector3 GetLookDirection()
         {
             Vector3 direction = m_Interactor.GetAttachTransform(this).position - m_Handle.position;
             direction = transform.InverseTransformDirection(direction);
-            direction.x = 0;
+
+            switch (m_LocalAxis)
+            {
+                case SwitchLocalAxis.X:
+                    direction.x = 0;
+                    break;
+                case SwitchLocalAxis.Y:
+                    direction.y = 0;
+                    break;
+                case SwitchLocalAxis.Z:
+                    direction.z = 0;
+                    break;
+            }
 
             return direction.normalized;
+        }
+
+        float GetLookAngle(Vector3 lookDirection)
+        {
+            switch (m_LocalAxis)
+            {
+                case SwitchLocalAxis.Y:
+                    return Mathf.Atan2(lookDirection.x, lookDirection.z) * Mathf.Rad2Deg;
+                case SwitchLocalAxis.Z:
+                    return Mathf.Atan2(-lookDirection.x, lookDirection.y) * Mathf.Rad2Deg;
+                default:
+                    return Mathf.Atan2(lookDirection.z, lookDirection.y) * Mathf.Rad2Deg;
+            }
         }
 
         void UpdateValue()
         {
             var lookDirection = GetLookDirection();
-            var lookAngle = Mathf.Atan2(lookDirection.z, lookDirection.y) * Mathf.Rad2Deg;
+            var lookAngle = GetLookAngle(lookDirection);
 
             if (m_MinAngle < m_MaxAngle)
                 lookAngle = Mathf.Clamp(lookAngle, m_MinAngle, m_MaxAngle);
@@ -222,24 +311,111 @@ namespace VRHelmet.VRTeam.Maintenance
             if (m_Value)
             {
                 m_OnLeverActivate.Invoke();
+                HandleSwitchOpened();
             }
             else
             {
                 m_OnLeverDeactivate.Invoke();
+                HandleSwitchClosed();
             }
 
-            if (!isSelected && (m_LockToValue || forceRotation))
+            if (m_LockToValue || forceRotation)
                 SetHandleAngle(m_Value ? m_MaxAngle : m_MinAngle);
+
+            HandleSwitchTargetStateChanged();
         }
 
         void SetHandleAngle(float angle)
         {
             if (m_Handle != null)
-                m_Handle.localRotation = Quaternion.Euler(angle, 0.0f, 0.0f);
+                m_Handle.localRotation = GetAxisRotation(angle);
+        }
+
+        Quaternion GetAxisRotation(float angle)
+        {
+            switch (m_LocalAxis)
+            {
+                case SwitchLocalAxis.Y:
+                    return Quaternion.Euler(0.0f, angle, 0.0f);
+                case SwitchLocalAxis.Z:
+                    return Quaternion.Euler(0.0f, 0.0f, angle);
+                default:
+                    return Quaternion.Euler(angle, 0.0f, 0.0f);
+            }
+        }
+
+        Vector3 GetGizmoDirection()
+        {
+            return m_LocalAxis == SwitchLocalAxis.Y ? Vector3.forward : Vector3.up;
+        }
+        #endregion
+
+        #region ==========Switch Trigger==========
+        void HandleSwitchOpened()
+        {
+            OnSwitchOpenCompleted?.Invoke();
+        }
+
+        void HandleSwitchClosed()
+        {
+            OnSwitchCloseCompleted?.Invoke();
+        }
+
+        void HandleSwitchTargetStateChanged()
+        {
+            if (!closeAfterOpenBeforeComplete)
+            {
+                if (m_Value == targetSwitchOpen)
+                {
+                    OnSwitchTargetCompleted?.Invoke();
+                }
+
+                return;
+            }
+
+            if (!hasReachedTargetBeforeReturn)
+            {
+                if (m_Value == targetSwitchOpen)
+                {
+                    hasReachedTargetBeforeReturn = true;
+                }
+
+                return;
+            }
+
+            if (m_Value == !targetSwitchOpen)
+            {
+                OnSwitchTargetCompleted?.Invoke();
+            }
         }
         #endregion
 
         #region ==========API==========
+        public void ConfigureSwitchTarget(bool targetOpen, bool closeAfterOpenBefore)
+        {
+            targetSwitchOpen = targetOpen;
+            closeAfterOpenBeforeComplete = closeAfterOpenBefore;
+            hasReachedTargetBeforeReturn = false;
+        }
+
+        public void ClearSwitchTarget()
+        {
+            OnSwitchTargetCompleted = null;
+            targetSwitchOpen = false;
+            closeAfterOpenBeforeComplete = false;
+            hasReachedTargetBeforeReturn = false;
+        }
+
+        public override bool IsHoverableBy(IXRHoverInteractor interactor)
+        {
+            return base.IsHoverableBy(interactor) && CanInteractByStepLayer(interactor, "Hover");
+        }
+
+        public override bool IsSelectableBy(IXRSelectInteractor interactor)
+        {
+            return base.IsSelectableBy(interactor) && CanInteractByStepLayer(interactor, "Select");
+        }
+
         /// <summary>
         /// 根据 XR Interaction Toolkit 更新阶段处理拉杆交互。
         /// </summary>
@@ -250,12 +426,19 @@ namespace VRHelmet.VRTeam.Maintenance
 
             if (updatePhase == XRInteractionUpdateOrder.UpdatePhase.Dynamic)
             {
-                if (isSelected)
+                if (isSelected && !isRayInstantSelect && m_Interactor != null)
                 {
                     UpdateValue();
                 }
             }
         }
         #endregion
+    }
+
+    public enum SwitchLocalAxis
+    {
+        X,
+        Y,
+        Z
     }
 }

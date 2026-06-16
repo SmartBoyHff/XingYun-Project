@@ -165,6 +165,8 @@ namespace VRHelmet.VRTeam.Maintenance
         ValueChangeEvent m_OnValueChange = new ValueChangeEvent();
 
         IXRSelectInteractor m_Interactor;
+        VR4_BaseObject permissionSource;
+        VR4_FunctionalComponents functionalPermissionSource;
 
         bool m_PositionDriven = false;
         bool m_UpVectorDriven = false;
@@ -249,6 +251,8 @@ namespace VRHelmet.VRTeam.Maintenance
         protected override void OnEnable()
         {
             base.OnEnable();
+            selectEntered.RemoveListener(StartGrab);
+            selectExited.RemoveListener(EndGrab);
             selectEntered.AddListener(StartGrab);
             selectExited.AddListener(EndGrab);
         }
@@ -262,6 +266,32 @@ namespace VRHelmet.VRTeam.Maintenance
         #endregion
 
         #region ==========Logic==========
+        VR4_BaseObject GetPermissionSource()
+        {
+            if (permissionSource == null)
+            {
+                permissionSource = GetComponent<VR4_BaseObject>();
+            }
+
+            return permissionSource;
+        }
+
+        bool CanInteractByStepLayer(IXRInteractor interactor, string actionName)
+        {
+            VR4_BaseObject source = GetPermissionSource();
+            if (source != null)
+            {
+                return source.CanInteract(interactor as XRBaseInteractor, actionName);
+            }
+
+            if (functionalPermissionSource == null)
+            {
+                functionalPermissionSource = GetComponent<VR4_FunctionalComponents>();
+            }
+
+            return functionalPermissionSource == null || functionalPermissionSource.IsInteractorAllowed(interactor, actionName);
+        }
+
         void StartGrab(SelectEnterEventArgs args)
         {
             m_Interactor = args.interactorObject;
@@ -461,6 +491,16 @@ namespace VRHelmet.VRTeam.Maintenance
         #endregion
 
         #region ==========API==========
+        public override bool IsHoverableBy(IXRHoverInteractor interactor)
+        {
+            return base.IsHoverableBy(interactor) && CanInteractByStepLayer(interactor, "Hover");
+        }
+
+        public override bool IsSelectableBy(IXRSelectInteractor interactor)
+        {
+            return base.IsSelectableBy(interactor) && CanInteractByStepLayer(interactor, "Select");
+        }
+
         /// <summary>
         /// 根据 XR Interaction Toolkit 更新阶段处理旋钮交互。
         /// </summary>

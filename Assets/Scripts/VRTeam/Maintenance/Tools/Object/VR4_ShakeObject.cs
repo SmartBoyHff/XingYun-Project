@@ -72,6 +72,8 @@ namespace VRHelmet.VRTeam.Maintenance
         {
             if (grabInteractable != null)
             {
+                grabInteractable.selectEntered.RemoveListener(OnGrabbed);
+                grabInteractable.selectExited.RemoveListener(OnReleased);
                 grabInteractable.selectEntered.AddListener(OnGrabbed);
                 grabInteractable.selectExited.AddListener(OnReleased);
             }
@@ -171,11 +173,11 @@ namespace VRHelmet.VRTeam.Maintenance
             {
                 CompleteStep(OnShakeCompleted);
                 OutputValidity("打孔完成");
-                StopCoroutine(ShakeRoutine());
             }
 
             // 恢复原始旋转
             transform.rotation = initialRotation;
+            shakeCoroutine = null;
             ResetShakeState();
         }
 

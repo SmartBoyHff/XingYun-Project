@@ -125,6 +125,15 @@ namespace VRHelmet.VRTeam.Maintenance
             }
         }
 
+        private void OnDestroy()
+        {
+            OnTimerStarted = null;
+            OnTimerPaused = null;
+            OnTimerResumed = null;
+            OnTimerCompleted = null;
+            OnTimerCancelled = null;
+        }
+
         private void Update()
         {
             if (State != TimerState.Running) return;

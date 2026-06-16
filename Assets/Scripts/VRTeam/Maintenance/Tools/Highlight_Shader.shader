@@ -2,9 +2,8 @@ Shader "Custom/Highlight_Shader"
 {
     Properties
     {
-        _OutlineColor ("Outline Color", Color) = (1, 0, 0, 1)
-        _EdgePower ("Edge Power", Range(0.1, 5.0)) = 2.0
-        _EdgeIntensity ("Edge Intensity", Range(0.1, 3.0)) = 1.5
+        _Color ("Color", Color) = (1, 0.9, 0, 1)
+        _Power ("Power", Float) = 1.0
     }
 
     SubShader
@@ -20,7 +19,7 @@ Shader "Custom/Highlight_Shader"
 
         Pass
         {
-            Name "EdgeHighlight"
+            Name "FresnelHighlight"
 
             Cull Back
             ZWrite Off
@@ -45,13 +44,12 @@ Shader "Custom/Highlight_Shader"
             {
                 float4 pos : SV_POSITION;
                 float3 worldNormal : TEXCOORD0;
-                float3 viewDir : TEXCOORD1;
+                float3 worldViewDir : TEXCOORD1;
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
-            fixed4 _OutlineColor;
-            float _EdgePower;
-            float _EdgeIntensity;
+            fixed4 _Color;
+            float _Power;
 
             v2f vert(appdata v)
             {
@@ -61,7 +59,7 @@ Shader "Custom/Highlight_Shader"
 
                 o.pos = UnityObjectToClipPos(v.vertex);
                 o.worldNormal = UnityObjectToWorldNormal(v.normal);
-                o.viewDir = normalize(WorldSpaceViewDir(v.vertex));
+                o.worldViewDir = WorldSpaceViewDir(v.vertex);
 
                 return o;
             }
@@ -69,16 +67,12 @@ Shader "Custom/Highlight_Shader"
             fixed4 frag(v2f i) : SV_Target
             {
                 float3 normal = normalize(i.worldNormal);
-                float3 viewDir = normalize(i.viewDir);
+                float3 viewDir = normalize(i.worldViewDir);
+                float fresnel = pow(1.0 - saturate(dot(normal, viewDir)), max(_Power, 0.0001));
 
-                float fresnel = abs(dot(normal, viewDir));
-                fresnel = pow(fresnel, _EdgePower);
-                fresnel = 1.0 - fresnel;
-
-                clip(fresnel - 0.1);
-
-                fixed4 color = _OutlineColor;
-                color.a = fresnel * _EdgeIntensity;
+                fixed4 color = _Color;
+                color.rgb *= fresnel;
+                color.a *= fresnel;
 
                 return color;
             }

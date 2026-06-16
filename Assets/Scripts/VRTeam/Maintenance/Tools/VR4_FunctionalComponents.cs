@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.XR.Interaction.Toolkit;
+using UnityEngine.XR.Interaction.Toolkit.Filtering;
 
 // ============================================================
 // 文件名：VR_FunctionalComponents
@@ -63,6 +64,65 @@ namespace VRHelmet.VRTeam.Maintenance
         #endregion
     }
 
+    internal static class VR4_HighlightMaterialProvider
+    {
+        private const string HighlightShaderName = "Custom/Highlight_Shader";
+        private static Material sharedMaterial;
+        private static bool missingShaderLogged;
+
+        public static Material SharedMaterial
+        {
+            get
+            {
+                EnsureMaterial();
+                return sharedMaterial;
+            }
+        }
+
+        public static string DiagnosticMessage =>
+            $"未找到高光 Shader：{HighlightShaderName}。请确认 Highlight_Shader.shader 存在，且构建时没有被剔除。";
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetRuntimeState()
+        {
+            sharedMaterial = null;
+            missingShaderLogged = false;
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        private static void Prewarm()
+        {
+            EnsureMaterial();
+        }
+
+        private static void EnsureMaterial()
+        {
+            if (sharedMaterial != null)
+            {
+                return;
+            }
+
+            Shader highlightShader = Shader.Find(HighlightShaderName);
+            if (highlightShader == null)
+            {
+                if (!missingShaderLogged)
+                {
+                    missingShaderLogged = true;
+                    Debug.LogWarning($"[VR4Highlight] {DiagnosticMessage}");
+                }
+
+                return;
+            }
+
+            sharedMaterial = new Material(highlightShader)
+            {
+                name = "VR4_Runtime_Highlight_Mat",
+                hideFlags = HideFlags.HideAndDontSave,
+                enableInstancing = true
+            };
+        }
+    }
+
     /// <summary>
     /// 交互物体通用功能组件。
     /// 负责高光显示、释放后的刚体状态处理，以及工具类物体的初始位置恢复。
@@ -80,7 +140,7 @@ namespace VRHelmet.VRTeam.Maintenance
     /// - VRHelmet.VRTeam.Maintenance 维护保养流程脚本。
     /// </summary>
     [RequireComponent(typeof(XRBaseInteractable))]
-    public class VR4_FunctionalComponents : MonoBehaviour, IHighlightable, IResettableInteractable
+    public class VR4_FunctionalComponents : MonoBehaviour, IHighlightable, IResettableInteractable, IXRHoverFilter, IXRSelectFilter
     {
         #region ==========Field==========
         /// <summary>
@@ -98,26 +158,45 @@ namespace VRHelmet.VRTeam.Maintenance
         /// </summary>
         [SerializeField] private bool isTools = false;
 
+        [Header("Interaction Permission")]
+        [SerializeField] private VR4InteractionLayer interactionLayer = VR4InteractionLayer.Default;
+        [SerializeField] private bool enablePermissionLogs = true;
+
         /// <summary>
         /// 需要显示轮廓高光的渲染器列表。
         /// </summary>
         [SerializeField] private Renderer[] renderers;
 
         /// <summary>
-        /// 用于轮廓副 Renderer 的高光材质。为空时会从 Resources/Material/Highlight_Mat 加载。
+        /// 运行时共享高光材质，由 VR4_HighlightMaterialProvider 自动创建。
         /// </summary>
-        [SerializeField] private Material gaoguangMaterial;
+        private Material gaoguangMaterial;
 
         private readonly Dictionary<Renderer, GameObject> outlineObjects = new Dictionary<Renderer, GameObject>();
         private bool outlineObjectsCreated = false;
         private XRGrabInteractable grabInteractable;
         private Vector3 initialPosition;
         private Quaternion initialRotation;
+        private bool isStepRigidbodyActive;
+        private Coroutine releaseCoroutine;
+        private XRBaseInteractable baseInteractable;
+        private XRBaseInteractor activeLeftInteractor;
+        private XRBaseInteractor activeRightInteractor;
+        private XRBaseInteractor activeLeftRayInteractor;
+        private XRBaseInteractor activeRightRayInteractor;
+        private VR4InteractionLayer activeRightLayerMask = VR4InteractionLayer.Nothing;
+        private VR4InteractionLayer activeLeftLayerMask = VR4InteractionLayer.Nothing;
+        private bool activeTwoHandsMode;
+        private bool hasStepInteractionPermission;
+        private float lastPermissionLogTime = -10f;
+
+        public bool canProcess => isActiveAndEnabled;
         #endregion
 
         #region ==========Unity Method==========
         private void Awake()
         {
+            baseInteractable = GetComponent<XRBaseInteractable>();
             CacheInitialTransform();
             LoadHighlightMaterial();
             CreateOutlineObjects();
@@ -126,12 +205,15 @@ namespace VRHelmet.VRTeam.Maintenance
         private void Start()
         {
             grabInteractable = GetComponent<XRGrabInteractable>();
+            if (baseInteractable == null)
+            {
+                baseInteractable = GetComponent<XRBaseInteractable>();
+            }
             rig = GetComponent<Rigidbody>();
 
             if (rig != null)
             {
-                rig.useGravity = false;
-                rig.isKinematic = true;
+                SetRigidbodyKinematic(true);
             }
 
             BindGrabEvents();
@@ -140,6 +222,8 @@ namespace VRHelmet.VRTeam.Maintenance
         private void OnDestroy()
         {
             UnbindGrabEvents();
+            StopReleaseCoroutine();
+            DestroyOutlineObjects();
         }
 
         private void OnCollisionEnter(Collision collision)
@@ -155,38 +239,51 @@ namespace VRHelmet.VRTeam.Maintenance
         #region ----------Interactable Event----------
         private void BindGrabEvents()
         {
-            if (grabInteractable == null)
+            if (baseInteractable == null)
             {
                 return;
             }
 
-            grabInteractable.hoverEntered.AddListener(OnHoverStart);
-            grabInteractable.hoverExited.AddListener(OnHoverEnd);
-            grabInteractable.selectEntered.AddListener(OnSelectStart);
-            grabInteractable.selectExited.AddListener(OnSelectEnd);
+            UnbindGrabEvents();
+            baseInteractable.hoverFilters.Add(this);
+            baseInteractable.selectFilters.Add(this);
+            baseInteractable.hoverEntered.AddListener(OnHoverStart);
+            baseInteractable.hoverExited.AddListener(OnHoverEnd);
+            baseInteractable.selectEntered.AddListener(OnSelectStart);
+            baseInteractable.selectExited.AddListener(OnSelectEnd);
         }
 
         private void UnbindGrabEvents()
         {
-            if (grabInteractable == null)
+            if (baseInteractable == null)
             {
                 return;
             }
 
-            grabInteractable.hoverEntered.RemoveListener(OnHoverStart);
-            grabInteractable.hoverExited.RemoveListener(OnHoverEnd);
-            grabInteractable.selectEntered.RemoveListener(OnSelectStart);
-            grabInteractable.selectExited.RemoveListener(OnSelectEnd);
+            baseInteractable.hoverFilters.Remove(this);
+            baseInteractable.selectFilters.Remove(this);
+            baseInteractable.hoverEntered.RemoveListener(OnHoverStart);
+            baseInteractable.hoverExited.RemoveListener(OnHoverEnd);
+            baseInteractable.selectEntered.RemoveListener(OnSelectStart);
+            baseInteractable.selectExited.RemoveListener(OnSelectEnd);
         }
 
         private void OnHoverStart(HoverEnterEventArgs args)
         {
+            if (!CanInteract(args.interactorObject, "Hover"))
+            {
+                return;
+            }
+
             if (label != null)
             {
                 label.SetActive(true);
             }
 
-            AddGaoguang();
+            if (CanShowHighlightForInteractor(args.interactorObject as XRBaseInteractor))
+            {
+                AddGaoguang();
+            }
         }
 
         private void OnHoverEnd(HoverExitEventArgs args)
@@ -201,15 +298,25 @@ namespace VRHelmet.VRTeam.Maintenance
 
         private void OnSelectStart(SelectEnterEventArgs args)
         {
+            if (!CanInteract(args.interactorObject, "Select"))
+            {
+                return;
+            }
+
             if (label != null)
             {
                 label.SetActive(false);
+            }
+
+            if (isStepRigidbodyActive && ShouldEnablePhysicsForSelect(args.interactorObject))
+            {
+                SetRigidbodyKinematic(false);
             }
         }
 
         private void OnSelectEnd(SelectExitEventArgs args)
         {
-            if (rig != null && rig.isKinematic)
+            if (isStepRigidbodyActive && ShouldEnablePhysicsForSelect(args.interactorObject))
             {
                 SetRigidbodyKinematic(false);
             }
@@ -222,6 +329,96 @@ namespace VRHelmet.VRTeam.Maintenance
             CloseGaoguang();
         }
 
+        private bool CanInteract(IXRHoverInteractor interactor, string actionName)
+        {
+            return CanInteractInternal(interactor as XRBaseInteractor, actionName);
+        }
+
+        private bool CanInteract(IXRSelectInteractor interactor, string actionName)
+        {
+            return CanInteractInternal(interactor as XRBaseInteractor, actionName);
+        }
+
+        private bool CanInteractInternal(XRBaseInteractor interactor, string actionName)
+        {
+            if (!hasStepInteractionPermission)
+            {
+                return true;
+            }
+
+            VR4InteractionLayer allowedMask = GetAllowedMask(interactor);
+            bool allowed = (interactionLayer & allowedMask) != 0;
+            if (!allowed)
+            {
+                LogPermissionDenied(interactor, actionName, allowedMask);
+            }
+
+            return allowed;
+        }
+
+        private VR4InteractionLayer GetAllowedMask(XRBaseInteractor interactor)
+        {
+            if (!activeTwoHandsMode)
+            {
+                return activeRightLayerMask;
+            }
+
+            if (interactor != null && (interactor == activeLeftInteractor || interactor == activeLeftRayInteractor))
+            {
+                return activeLeftLayerMask;
+            }
+
+            return activeRightLayerMask;
+        }
+
+        private bool CanShowHighlightForInteractor(XRBaseInteractor interactor)
+        {
+            if (!hasStepInteractionPermission || interactor == null)
+            {
+                return false;
+            }
+
+            if (interactor == activeLeftRayInteractor)
+            {
+                return IsExactHighlightLayer(activeLeftLayerMask);
+            }
+
+            if (interactor == activeRightRayInteractor)
+            {
+                return IsExactHighlightLayer(activeRightLayerMask);
+            }
+
+            return false;
+        }
+
+        private bool CanShowHighlightForCurrentRaySettings()
+        {
+            if (!hasStepInteractionPermission)
+            {
+                return false;
+            }
+
+            return IsExactHighlightLayer(activeRightLayerMask) ||
+                   (activeTwoHandsMode && IsExactHighlightLayer(activeLeftLayerMask));
+        }
+
+        private bool IsExactHighlightLayer(VR4InteractionLayer rayLayerMask)
+        {
+            return rayLayerMask == interactionLayer;
+        }
+
+        private void LogPermissionDenied(XRBaseInteractor interactor, string actionName, VR4InteractionLayer allowedMask)
+        {
+            if (!enablePermissionLogs || Time.time - lastPermissionLogTime < 0.5f)
+            {
+                return;
+            }
+
+            lastPermissionLogTime = Time.time;
+            string interactorName = interactor != null ? interactor.name : "UnknownInteractor";
+            Debug.LogWarning($"[VR4Permission] Denied {actionName}. Object={name}, ObjectLayer={interactionLayer}, Interactor={interactorName}, AllowedMask={allowedMask}");
+        }
+
         private void SetRigidbodyKinematic(bool isKinematic)
         {
             if (rig == null)
@@ -229,18 +426,41 @@ namespace VRHelmet.VRTeam.Maintenance
                 return;
             }
 
+            if (!rig.isKinematic)
+            {
+                ClearRigidbodyVelocity();
+            }
+
             rig.isKinematic = isKinematic;
             rig.useGravity = !isKinematic;
+
+            if (!rig.isKinematic)
+            {
+                ClearRigidbodyVelocity();
+            }
+        }
+
+        private void ClearRigidbodyVelocity()
+        {
+            if (rig == null)
+            {
+                return;
+            }
+
+            rig.velocity = Vector3.zero;
+            rig.angularVelocity = Vector3.zero;
+        }
+
+        private bool ShouldEnablePhysicsForSelect(IXRSelectInteractor interactor)
+        {
+            return interactor is XRDirectInteractor;
         }
         #endregion
 
         #region ----------Highlight----------
         private void LoadHighlightMaterial()
         {
-            if (gaoguangMaterial == null)
-            {
-                gaoguangMaterial = Resources.Load<Material>("Material/Highlight_Mat");
-            }
+            gaoguangMaterial = VR4_HighlightMaterialProvider.SharedMaterial;
         }
 
         private void CreateOutlineObjects()
@@ -280,7 +500,7 @@ namespace VRHelmet.VRTeam.Maintenance
         {
             if (gaoguangMaterial == null)
             {
-                Debug.LogWarning($"{name} 未找到高光材质 Resources/Material/Highlight_Mat");
+                Debug.LogWarning($"{name} {VR4_HighlightMaterialProvider.DiagnosticMessage}");
                 return null;
             }
 
@@ -362,6 +582,20 @@ namespace VRHelmet.VRTeam.Maintenance
                 }
             }
         }
+
+        private void DestroyOutlineObjects()
+        {
+            foreach (GameObject outlineObject in outlineObjects.Values)
+            {
+                if (outlineObject != null)
+                {
+                    Destroy(outlineObject);
+                }
+            }
+
+            outlineObjects.Clear();
+            outlineObjectsCreated = false;
+        }
         #endregion
 
         #region ----------Restore Transform----------
@@ -405,6 +639,19 @@ namespace VRHelmet.VRTeam.Maintenance
                     interactionManager.SelectExit(interactor, interactable);
                 }
             }
+
+            releaseCoroutine = null;
+        }
+
+        private void StopReleaseCoroutine()
+        {
+            if (releaseCoroutine == null)
+            {
+                return;
+            }
+
+            StopCoroutine(releaseCoroutine);
+            releaseCoroutine = null;
         }
         #endregion
         #endregion
@@ -413,6 +660,67 @@ namespace VRHelmet.VRTeam.Maintenance
         /// <summary>
         /// 显示 Renderers 列表对应的轮廓高光副 Renderer。
         /// </summary>
+        public bool Process(IXRHoverInteractor interactor, IXRHoverInteractable interactable)
+        {
+            return CanInteract(interactor, "HoverFilter");
+        }
+
+        public bool Process(IXRSelectInteractor interactor, IXRSelectInteractable interactable)
+        {
+            return CanInteract(interactor, "SelectFilter");
+        }
+
+        public bool IsInteractorAllowed(IXRInteractor interactor, string actionName)
+        {
+            return CanInteractInternal(interactor as XRBaseInteractor, actionName);
+        }
+
+        public void ConfigureStepInteractionPermission(
+            VR4InteractionLayer rightLayerMask,
+            VR4InteractionLayer leftLayerMask,
+            bool twoHandsMode,
+            XRBaseInteractor leftInteractor,
+            XRBaseInteractor rightInteractor,
+            XRBaseInteractor leftRayInteractor,
+            XRBaseInteractor rayInteractor)
+        {
+            activeRightLayerMask = NormalizeLayerMask(rightLayerMask);
+            activeLeftLayerMask = NormalizeLayerMask(leftLayerMask);
+            activeTwoHandsMode = twoHandsMode;
+            activeLeftInteractor = leftInteractor;
+            activeRightInteractor = rightInteractor;
+            activeLeftRayInteractor = leftRayInteractor;
+            activeRightRayInteractor = rayInteractor;
+            hasStepInteractionPermission = true;
+        }
+
+        public void ClearStepInteractionPermission()
+        {
+            hasStepInteractionPermission = false;
+            activeRightLayerMask = VR4InteractionLayer.Nothing;
+            activeLeftLayerMask = VR4InteractionLayer.Nothing;
+            activeTwoHandsMode = false;
+            activeLeftInteractor = null;
+            activeRightInteractor = null;
+            activeLeftRayInteractor = null;
+            activeRightRayInteractor = null;
+        }
+
+        public bool IsAllowedByCurrentStep()
+        {
+            if (!hasStepInteractionPermission)
+            {
+                return true;
+            }
+
+            return (interactionLayer & activeRightLayerMask) != 0 || (activeTwoHandsMode && (interactionLayer & activeLeftLayerMask) != 0);
+        }
+
+        private VR4InteractionLayer NormalizeLayerMask(VR4InteractionLayer layerMask)
+        {
+            return layerMask;
+        }
+
         public void AddGaoguang()
         {
             SetOutlineObjectsActive(true);
@@ -431,7 +739,14 @@ namespace VRHelmet.VRTeam.Maintenance
         /// </summary>
         public void ShowHighlight()
         {
-            AddGaoguang();
+            if (CanShowHighlightForCurrentRaySettings())
+            {
+                AddGaoguang();
+            }
+            else
+            {
+                CloseGaoguang();
+            }
         }
 
         /// <summary>
@@ -443,11 +758,30 @@ namespace VRHelmet.VRTeam.Maintenance
         }
 
         /// <summary>
+        /// 步骤开始时进入刚体管理状态，但保持无重力，等待玩家真正抓取后再启用物理。
+        /// </summary>
+        public void ActivateStepRigidbody()
+        {
+            isStepRigidbodyActive = true;
+            SetRigidbodyKinematic(true);
+        }
+
+        /// <summary>
+        /// 步骤结束时关闭当前物体的物理运动并禁用重力。
+        /// </summary>
+        public void DeactivateStepRigidbody()
+        {
+            isStepRigidbodyActive = false;
+            SetRigidbodyKinematic(true);
+        }
+
+        /// <summary>
         /// 释放当前交互器，并将物体恢复到初始位置和初始旋转。
         /// </summary>
         public void ResetObject()
         {
-            StartCoroutine(ReleaseFromInteractors());
+            StopReleaseCoroutine();
+            releaseCoroutine = StartCoroutine(ReleaseFromInteractors());
             transform.SetPositionAndRotation(initialPosition, initialRotation);
             SetRigidbodyKinematic(true);
         }
