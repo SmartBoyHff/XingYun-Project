@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "com.monitor1394.xcharts": "file:F:/项目/XCharts-master",
     "com.unity.2d.sprite": "1.0.0",
     "com.unity.collab-proxy": "2.12.4",
     "com.unity.ide.rider": "3.0.31",
@@ -15,6 +16,7 @@
     "com.unity.ugui": "1.0.0",
     "com.unity.visualscripting": "1.9.4",
     "com.unity.xr.interaction.toolkit": "2.6.5",
+    "com.unity.xr.openxr": "1.12.1",
     "com.unity.xr.picoxr": "file:E:/下载/PICO Unity Integration SDK-3.0.5-20241105",
     "com.unity.modules.ai": "1.0.0",
     "com.unity.modules.androidjni": "1.0.0",
